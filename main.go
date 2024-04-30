@@ -67,3 +67,52 @@ func main() {
 		}
 	}
 }
+
+// TODO reverse this convert function
+func convertFromLegacyInfo(info cosmoskeyring.LegacyInfo) (*cosmoskeyring.Record, error) {
+	name := info.GetName()
+	pk := info.GetPubKey()
+
+	switch info.GetType() {
+	case cosmoskeyring.TypeLocal:
+		priv, err := privKeyFromLegacyInfo(info)
+		if err != nil {
+			return nil, err
+		}
+
+		return cosmoskeyring.NewLocalRecord(name, priv, pk)
+	case cosmoskeyring.TypeOffline:
+		return cosmoskeyring.NewOfflineRecord(name, pk)
+	case cosmoskeyring.TypeMulti:
+		return cosmoskeyring.NewMultiRecord(name, pk)
+	case cosmoskeyring.TypeLedger:
+		path, err := info.GetPath()
+		if err != nil {
+			return nil, err
+		}
+
+		return cosmoskeyring.NewLedgerRecord(name, pk, path)
+	default:
+		return nil, cosmoskeyring.ErrUnknownLegacyType
+
+	}
+}
+
+// privKeyFromLegacyInfo exports a private key from LegacyInfo
+func privKeyFromLegacyInfo(info cosmoskeyring.LegacyInfo) (cryptotypes.PrivKey, error) {
+	switch linfo := info.(type) {
+	case legacyLocalInfo:
+		if linfo.PrivKeyArmor == "" {
+			return nil, fmt.Errorf("private key not available")
+		}
+		priv, err := legacy.PrivKeyFromBytes([]byte(linfo.PrivKeyArmor))
+		if err != nil {
+			return nil, err
+		}
+
+		return priv, nil
+	// case legacyLedgerInfo, legacyOfflineInfo, LegacyMultiInfo:
+	default:
+		return nil, fmt.Errorf("only works on local private keys, provided %s", linfo)
+	}
+}
