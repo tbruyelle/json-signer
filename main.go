@@ -15,13 +15,18 @@ import (
 )
 
 var (
-	registry   = codectypes.NewInterfaceRegistry()
 	protocodec *codec.ProtoCodec
+	aminoCodec *codec.LegacyAmino
 )
 
 func init() {
+	registry := codectypes.NewInterfaceRegistry()
 	cryptocodec.RegisterInterfaces(registry)
 	protocodec = codec.NewProtoCodec(registry)
+
+	aminoCodec = codec.NewLegacyAmino()
+	cryptocodec.RegisterCrypto(aminoCodec)
+	cosmoskeyring.RegisterLegacyAminoCodec(aminoCodec)
 }
 
 func main() {
@@ -50,10 +55,15 @@ func main() {
 			panic(err)
 		}
 		fmt.Println("KEY", key, item)
-		var k cosmoskeyring.Record
-		if err := protocodec.Unmarshal(item.Data, &k); err != nil {
-			panic(err)
+		var record cosmoskeyring.Record
+		if err := protocodec.Unmarshal(item.Data, &record); err == nil {
+			fmt.Println("PROTO ENCODED KEY", record)
+		} else {
+			var info cosmoskeyring.LegacyInfo
+			if err := aminoCodec.UnmarshalLengthPrefixed(item.Data, &info); err != nil {
+				panic(err)
+			}
+			fmt.Println("AMINO ENCODED KEY", info)
 		}
-		fmt.Println("RECORD", k)
 	}
 }
