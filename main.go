@@ -7,7 +7,22 @@ import (
 
 	"github.com/99designs/keyring"
 	"github.com/bgentry/speakeasy"
+
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
+	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 )
+
+var (
+	registry   = codectypes.NewInterfaceRegistry()
+	protocodec *codec.ProtoCodec
+)
+
+func init() {
+	cryptocodec.RegisterInterfaces(registry)
+	protocodec = codec.NewProtoCodec(registry)
+}
 
 func main() {
 	keyringDir := os.Args[1]
@@ -26,7 +41,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("KEYS", keys)
 	for _, key := range keys {
 		if !strings.HasSuffix(key, ".info") {
 			continue
@@ -36,5 +50,10 @@ func main() {
 			panic(err)
 		}
 		fmt.Println("KEY", key, item)
+		var k cosmoskeyring.Record
+		if err := protocodec.Unmarshal(item.Data, &k); err != nil {
+			panic(err)
+		}
+		fmt.Println("RECORD", k)
 	}
 }
