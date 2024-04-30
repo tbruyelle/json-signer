@@ -1,17 +1,20 @@
 package main
 
 import (
+	"encoding/hex"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/99designs/keyring"
 	"github.com/bgentry/speakeasy"
+	"github.com/davecgh/go-spew/spew"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 var (
@@ -47,28 +50,42 @@ func main() {
 		panic(err)
 	}
 	for _, key := range keys {
-		if !strings.HasSuffix(key, ".info") {
-			continue
-		}
-		item, err := kr.Get(key)
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println("KEY", key, item)
-		var record cosmoskeyring.Record
-		if err := protocodec.Unmarshal(item.Data, &record); err == nil {
-			fmt.Println("PROTO ENCODED KEY", record)
-		} else {
-			var info cosmoskeyring.LegacyInfo
-			if err := aminoCodec.UnmarshalLengthPrefixed(item.Data, &info); err != nil {
+		switch {
+
+		case strings.HasSuffix(key, ".address"):
+			item, err := kr.Get(key)
+			if err != nil {
 				panic(err)
 			}
-			fmt.Println("AMINO ENCODED KEY", info)
+			bz, err := hex.DecodeString(strings.TrimSuffix(key, ".address"))
+			if err != nil {
+				panic(err)
+			}
+			addr := sdk.AccAddress(bz)
+			fmt.Printf("%s -> %s - %s\n", key, addr.String(), string(item.Data))
+
+		case strings.HasSuffix(key, ".info"):
+			item, err := kr.Get(key)
+			if err != nil {
+				panic(err)
+			}
+			var record cosmoskeyring.Record
+			if err := protocodec.Unmarshal(item.Data, &record); err == nil {
+				fmt.Printf("%s (proto encoded)-> %s\n", key, spew.Sdump(record))
+				continue
+			}
+			var info cosmoskeyring.LegacyInfo
+			if err := aminoCodec.UnmarshalLengthPrefixed(item.Data, &info); err == nil {
+				fmt.Printf("%s (amino encoded)-> %s\n", key, spew.Sdump(info))
+				continue
+			}
+			fmt.Printf("%s cannot be decoded\n", key)
 		}
 	}
 }
 
 // TODO reverse this convert function
+/*
 func convertFromLegacyInfo(info cosmoskeyring.LegacyInfo) (*cosmoskeyring.Record, error) {
 	name := info.GetName()
 	pk := info.GetPubKey()
@@ -116,3 +133,4 @@ func privKeyFromLegacyInfo(info cosmoskeyring.LegacyInfo) (cryptotypes.PrivKey, 
 		return nil, fmt.Errorf("only works on local private keys, provided %s", linfo)
 	}
 }
+*/
