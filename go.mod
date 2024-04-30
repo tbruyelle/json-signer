@@ -2,9 +2,12 @@ module github.com/tbruyelle/legacykey
 
 go 1.22.2
 
-require github.com/99designs/keyring v1.2.1
+require (
+	github.com/99designs/keyring v1.2.1
+	github.com/bgentry/speakeasy v0.1.0
+)
 
-replace github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
+replace github.com/99designs/keyring => /home/tom/gohack/github.com/99designs/keyring // was github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
 
 require (
 	github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // indirect
