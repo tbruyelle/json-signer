@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/99designs/keyring"
@@ -13,6 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
+	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -29,7 +31,11 @@ func init() {
 
 	aminoCodec = codec.NewLegacyAmino()
 	cryptocodec.RegisterCrypto(aminoCodec)
-	cosmoskeyring.RegisterLegacyAminoCodec(aminoCodec)
+	aminoCodec.RegisterInterface((*cosmoskeyring.LegacyInfo)(nil), nil)
+	aminoCodec.RegisterConcrete(hd.BIP44Params{}, "crypto/keys/hd/BIP44Params", nil)
+	aminoCodec.RegisterConcrete(legacyLocalInfo{}, "crypto/keys/localInfo", nil)
+	aminoCodec.RegisterConcrete(legacyLedgerInfo{}, "crypto/keys/ledgerInfo", nil)
+	aminoCodec.RegisterConcrete(legacyOfflineInfo{}, "crypto/keys/offlineInfo", nil)
 }
 
 func main() {
@@ -70,67 +76,89 @@ func main() {
 				panic(err)
 			}
 			var record cosmoskeyring.Record
-			if err := protocodec.Unmarshal(item.Data, &record); err == nil {
-				fmt.Printf("%s (proto encoded)-> %s\n", key, spew.Sdump(record))
+			errProto := protocodec.Unmarshal(item.Data, &record)
+			if errProto == nil {
+				fmt.Printf("%q (proto encoded)-> %s\n", key, spew.Sdump(record))
+				// Turn record to legacyInfo
+				info, err := legacyInfoFromRecord(record)
+				if err != nil {
+					panic(err)
+				}
+				// amino marshal legacyInfo
+				bz, err := aminoCodec.MarshalLengthPrefixed(info)
+				if err != nil {
+					panic(err)
+				}
+				addr, err := record.GetAddress()
+				if err != nil {
+					panic(err)
+				}
+				// record in new keyring
+				aminoKeyringDir := filepath.Join(keyringDir, "amino")
+				aminoKr, err := keyring.Open(keyring.Config{
+					AllowedBackends: []keyring.BackendType{keyring.FileBackend},
+					ServiceName:     "govgen",
+					FileDir:         aminoKeyringDir,
+					FilePasswordFunc: func(prompt string) (string, error) {
+						return speakeasy.Ask(fmt.Sprintf("Enter password for amino keyring %q: ", aminoKeyringDir))
+					},
+				})
+				if err := aminoKr.Set(keyring.Item{Key: key, Data: bz}); err != nil {
+					panic(err)
+				}
+				item = keyring.Item{
+					Key:  addrHexKeyAsString(addr),
+					Data: []byte(key),
+				}
+
+				if err := aminoKr.Set(item); err != nil {
+					panic(err)
+				}
+				fmt.Printf("%q re-encoded to amino keyring %q\n", key, aminoKeyringDir)
 				continue
 			}
 			var info cosmoskeyring.LegacyInfo
-			if err := aminoCodec.UnmarshalLengthPrefixed(item.Data, &info); err == nil {
-				fmt.Printf("%s (amino encoded)-> %s\n", key, spew.Sdump(info))
+			errAmino := aminoCodec.UnmarshalLengthPrefixed(item.Data, &info)
+			if errAmino == nil {
+				fmt.Printf("%q (amino encoded)-> %s\n", key, spew.Sdump(info))
 				continue
 			}
-			fmt.Printf("%s cannot be decoded\n", key)
+			fmt.Printf("%q cannot be decoded: errProto=%v, errAmino=%v\n", key, errProto, errAmino)
 		}
 	}
 }
 
-// TODO reverse this convert function
-/*
-func convertFromLegacyInfo(info cosmoskeyring.LegacyInfo) (*cosmoskeyring.Record, error) {
-	name := info.GetName()
-	pk := info.GetPubKey()
+func addrHexKeyAsString(address sdk.Address) string {
+	return fmt.Sprintf("%s.address", hex.EncodeToString(address.Bytes()))
+}
 
-	switch info.GetType() {
+// legacyInfoFromLegacyInfo turns a Record into a LegacyInfo.
+func legacyInfoFromRecord(record cosmoskeyring.Record) (cosmoskeyring.LegacyInfo, error) {
+	switch record.GetType() {
 	case cosmoskeyring.TypeLocal:
-		priv, err := privKeyFromLegacyInfo(info)
+		pk, err := record.GetPubKey()
 		if err != nil {
 			return nil, err
 		}
+		privBz, err := protocodec.Marshal(record.GetLocal().PrivKey)
+		if err != nil {
+			return nil, err
+		}
+		return legacyLocalInfo{
+			Name:         record.Name,
+			PubKey:       pk,
+			PrivKeyArmor: string(privBz),
+			Algo:         hd.PubKeyType(pk.Type()),
+		}, nil
 
-		return cosmoskeyring.NewLocalRecord(name, priv, pk)
-	case cosmoskeyring.TypeOffline:
-		return cosmoskeyring.NewOfflineRecord(name, pk)
-	case cosmoskeyring.TypeMulti:
-		return cosmoskeyring.NewMultiRecord(name, pk)
 	case cosmoskeyring.TypeLedger:
-		path, err := info.GetPath()
-		if err != nil {
-			return nil, err
-		}
+		// TODO
 
-		return cosmoskeyring.NewLedgerRecord(name, pk, path)
-	default:
-		return nil, cosmoskeyring.ErrUnknownLegacyType
+	case cosmoskeyring.TypeMulti:
+		panic("record type TypeMulti unhandled")
 
+	case cosmoskeyring.TypeOffline:
+		panic("record type TypeOffline unhandled")
 	}
+	panic(fmt.Sprintf("record type %s unhandled", record.GetType()))
 }
-
-// privKeyFromLegacyInfo exports a private key from LegacyInfo
-func privKeyFromLegacyInfo(info cosmoskeyring.LegacyInfo) (cryptotypes.PrivKey, error) {
-	switch linfo := info.(type) {
-	case legacyLocalInfo:
-		if linfo.PrivKeyArmor == "" {
-			return nil, fmt.Errorf("private key not available")
-		}
-		priv, err := legacy.PrivKeyFromBytes([]byte(linfo.PrivKeyArmor))
-		if err != nil {
-			return nil, err
-		}
-
-		return priv, nil
-	// case legacyLedgerInfo, legacyOfflineInfo, LegacyMultiInfo:
-	default:
-		return nil, fmt.Errorf("only works on local private keys, provided %s", linfo)
-	}
-}
-*/
