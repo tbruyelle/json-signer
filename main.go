@@ -13,7 +13,7 @@ func main() {
 	rootCmd := &ffcli.Command{
 		ShortUsage: "legacykey <subcommand>",
 		Subcommands: []*ffcli.Command{
-			migrateCmd(),
+			migrateKeysCmd(),
 		},
 		Exec: func(ctx context.Context, args []string) error {
 			return flag.ErrHelp
@@ -25,11 +25,11 @@ func main() {
 	}
 }
 
-func migrateCmd() *ffcli.Command {
-	fs := flag.NewFlagSet("migrate", flag.ContinueOnError)
+func migrateKeysCmd() *ffcli.Command {
+	fs := flag.NewFlagSet("migrate-keys", flag.ContinueOnError)
 	return &ffcli.Command{
-		Name:       "migrate",
-		ShortUsage: "legacytx migrate <keyring_path>",
+		Name:       "migrate-keys",
+		ShortUsage: "legacytx migrate-keys <keyring_path>",
 		ShortHelp:  "Migrate keys from proto to amino",
 		FlagSet:    fs,
 		Exec: func(ctx context.Context, args []string) error {
