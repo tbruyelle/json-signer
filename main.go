@@ -42,10 +42,21 @@ func main() {
 	keyringDir := os.Args[1]
 	kr, err := keyring.Open(keyring.Config{
 		AllowedBackends: []keyring.BackendType{keyring.FileBackend},
-		ServiceName:     "govgen",
 		FileDir:         keyringDir,
 		FilePasswordFunc: func(prompt string) (string, error) {
 			return speakeasy.Ask(prompt + ": ")
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+	// new keyring for migrated keys
+	aminoKeyringDir := filepath.Join(keyringDir, "amino")
+	aminoKr, err := keyring.Open(keyring.Config{
+		AllowedBackends: []keyring.BackendType{keyring.FileBackend},
+		FileDir:         aminoKeyringDir,
+		FilePasswordFunc: func(prompt string) (string, error) {
+			return speakeasy.Ask(fmt.Sprintf("Enter password for amino keyring %q: ", aminoKeyringDir))
 		},
 	})
 	if err != nil {
@@ -93,16 +104,6 @@ func main() {
 				if err != nil {
 					panic(err)
 				}
-				// record in new keyring
-				aminoKeyringDir := filepath.Join(keyringDir, "amino")
-				aminoKr, err := keyring.Open(keyring.Config{
-					AllowedBackends: []keyring.BackendType{keyring.FileBackend},
-					ServiceName:     "govgen",
-					FileDir:         aminoKeyringDir,
-					FilePasswordFunc: func(prompt string) (string, error) {
-						return speakeasy.Ask(fmt.Sprintf("Enter password for amino keyring %q: ", aminoKeyringDir))
-					},
-				})
 				if err := aminoKr.Set(keyring.Item{Key: key, Data: bz}); err != nil {
 					panic(err)
 				}
@@ -152,12 +153,21 @@ func legacyInfoFromRecord(record cosmoskeyring.Record) (cosmoskeyring.LegacyInfo
 		return legacyLocalInfo{
 			Name:         record.Name,
 			PubKey:       pk,
-			PrivKeyArmor: string(privBz),
 			Algo:         hd.PubKeyType(pk.Type()),
+			PrivKeyArmor: string(privBz),
 		}, nil
 
 	case cosmoskeyring.TypeLedger:
-		// TODO
+		pk, err := record.GetPubKey()
+		if err != nil {
+			return nil, err
+		}
+		return legacyLedgerInfo{
+			Name:   record.Name,
+			PubKey: pk,
+			Algo:   hd.PubKeyType(pk.Type()),
+			Path:   *record.GetLedger().Path,
+		}, nil
 
 	case cosmoskeyring.TypeMulti:
 		panic("record type TypeMulti unhandled")
