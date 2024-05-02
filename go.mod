@@ -7,6 +7,7 @@ require (
 	github.com/bgentry/speakeasy v0.1.1-0.20220910012023-760eaf8b6816
 	github.com/cosmos/cosmos-sdk v0.50.6
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
+	github.com/peterbourgon/ff/v3 v3.4.0
 )
 
 replace github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
