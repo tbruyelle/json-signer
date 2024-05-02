@@ -141,7 +141,11 @@ func legacyInfoFromRecord(record cosmoskeyring.Record) (cosmoskeyring.LegacyInfo
 		if err != nil {
 			return nil, err
 		}
-		privBz, err := protocodec.Marshal(record.GetLocal().PrivKey)
+		privKey, err := extractPrivKeyFromLocal(record.GetLocal())
+		if err != nil {
+			return nil, err
+		}
+		privBz, err := aminoCodec.Marshal(privKey)
 		if err != nil {
 			return nil, err
 		}

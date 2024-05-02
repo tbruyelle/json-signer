@@ -137,3 +137,16 @@ func (i legacyOfflineInfo) GetAddress() sdk.AccAddress {
 func (i legacyOfflineInfo) GetPath() (*hd.BIP44Params, error) {
 	return nil, fmt.Errorf("BIP44 Paths are not available for this type")
 }
+
+func extractPrivKeyFromLocal(rl *cosmoskeyring.Record_Local) (cryptotypes.PrivKey, error) {
+	if rl.PrivKey == nil {
+		return nil, cosmoskeyring.ErrPrivKeyNotAvailable
+	}
+
+	priv, ok := rl.PrivKey.GetCachedValue().(cryptotypes.PrivKey)
+	if !ok {
+		return nil, cosmoskeyring.ErrCastAny
+	}
+
+	return priv, nil
+}
