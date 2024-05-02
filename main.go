@@ -29,7 +29,7 @@ func migrateKeysCmd() *ffcli.Command {
 	fs := flag.NewFlagSet("migrate-keys", flag.ContinueOnError)
 	return &ffcli.Command{
 		Name:       "migrate-keys",
-		ShortUsage: "legacytx migrate-keys <keyring_path>",
+		ShortUsage: "legacykey migrate-keys <keyring_path>",
 		ShortHelp:  "Migrate keys from proto to amino",
 		FlagSet:    fs,
 		Exec: func(ctx context.Context, args []string) error {
