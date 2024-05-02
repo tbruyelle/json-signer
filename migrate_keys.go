@@ -62,10 +62,12 @@ func migrateKeys(keyringDir string) error {
 			if err != nil {
 				return err
 			}
+			// Try to decode with proto
 			var record cosmoskeyring.Record
 			errProto := protocodec.Unmarshal(item.Data, &record)
 			if errProto == nil {
 				fmt.Printf("%q (proto encoded)-> %s\n", key, spew.Sdump(record))
+				// Create a new amino key from the proto key
 				// Turn record to legacyInfo
 				info, err := legacyInfoFromRecord(record)
 				if err != nil {
@@ -95,6 +97,7 @@ func migrateKeys(keyringDir string) error {
 				fmt.Printf("%q re-encoded to amino keyring %q\n", key, aminoKeyringDir)
 				continue
 			}
+			// Try to decode with amino
 			var info cosmoskeyring.LegacyInfo
 			errAmino := aminoCodec.UnmarshalLengthPrefixed(item.Data, &info)
 			if errAmino == nil {
