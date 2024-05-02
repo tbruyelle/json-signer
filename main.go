@@ -114,6 +114,7 @@ func main() {
 				if err := aminoKr.Set(item); err != nil {
 					panic(err)
 				}
+				// TODO create keyring-dir/keyhash file
 				fmt.Printf("%q re-encoded to amino keyring %q\n", key, aminoKeyringDir)
 				continue
 			}
