@@ -71,23 +71,23 @@ func migrateKeys(keyringDir string) error {
 				if err != nil {
 					return err
 				}
-				// amino marshal legacyInfo
+				// Register new amino key_name.info -> amino encoded LegacyInfo
 				bz, err := aminoCodec.MarshalLengthPrefixed(info)
-				if err != nil {
-					return err
-				}
-				addr, err := record.GetAddress()
 				if err != nil {
 					return err
 				}
 				if err := aminoKr.Set(keyring.Item{Key: key, Data: bz}); err != nil {
 					return err
 				}
+				// Register new amino hex_address.address -> key_name
+				addr, err := record.GetAddress()
+				if err != nil {
+					return err
+				}
 				item = keyring.Item{
 					Key:  addrHexKeyAsString(addr),
 					Data: []byte(key),
 				}
-
 				if err := aminoKr.Set(item); err != nil {
 					return err
 				}
