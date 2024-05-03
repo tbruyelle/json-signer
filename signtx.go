@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/99designs/keyring"
-	"github.com/bgentry/speakeasy"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/tbruyelle/legacykey/keyring"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 func signTx(txFile, keyringDir, signer string, account, sequence uint64) error {
@@ -16,13 +17,7 @@ func signTx(txFile, keyringDir, signer string, account, sequence uint64) error {
 		return err
 	}
 	spew.Dump(tx)
-	kr, err := keyring.Open(keyring.Config{
-		AllowedBackends: []keyring.BackendType{keyring.FileBackend},
-		FileDir:         keyringDir,
-		FilePasswordFunc: func(prompt string) (string, error) {
-			return speakeasy.Ask(prompt + ": ")
-		},
-	})
+	kr, err := keyring.New(keyringDir, "")
 	if err != nil {
 		return err
 	}
@@ -30,14 +25,16 @@ func signTx(txFile, keyringDir, signer string, account, sequence uint64) error {
 	if err != nil {
 		return err
 	}
-	// pubKey, err := key.GetPubKey()
-	// if err != nil {
-	// return err
-	// }
-	// addr := sdk.AccAddress(pubKey.Address())
-
-	_ = tx
-	_ = key
+	pubKey, err := key.GetPubKey()
+	if err != nil {
+		return err
+	}
+	addr := sdk.AccAddress(pubKey.Address())
+	signInfo := SignerInfo{
+		PublicKey: pubKey,
+	}
+	_ = addr
+	_ = signInfo
 
 	return nil
 }
@@ -46,29 +43,33 @@ type Tx struct {
 	Body struct {
 		Messages      []map[string]any
 		Memo          string
-		TimeoutHeight uint64 `json:"timeout_height"`
+		TimeoutHeight string `json:"timeout_height"`
 	}
 	AuthInfo struct {
-		SignerInfos []struct {
-			PublicKey any `json:"public_key"`
-			ModeInfo  struct {
-				Single struct {
-					Mode string
-				}
-			} `json:"mode_info"`
-			Sequence string
-		} `json:"signer_infos"`
-		Fee struct {
-			Amount []struct {
-				Denom  string
-				Amount string
-			}
+		SignerInfos []SignerInfo `json:"signer_infos"`
+		Fee         struct {
+			Amount   []Coin
 			GasLimit string `json:"gas_limit"`
 			Payer    string
 			Granter  string
 		}
 	} `json:"auth_info"`
 	Signatures []string
+}
+
+type SignerInfo struct {
+	PublicKey any `json:"public_key"`
+	ModeInfo  struct {
+		Single struct {
+			Mode string
+		}
+	} `json:"mode_info"`
+	Sequence string
+}
+
+type Coin struct {
+	Denom  string
+	Amount string
 }
 
 func readTxFile(txFile string) (Tx, error) {
