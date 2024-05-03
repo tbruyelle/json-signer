@@ -30,6 +30,12 @@ func signTx(txFile, keyringDir, signer string, account, sequence uint64) error {
 	if err != nil {
 		return err
 	}
+	// pubKey, err := key.GetPubKey()
+	// if err != nil {
+	// return err
+	// }
+	// addr := sdk.AccAddress(pubKey.Address())
+
 	_ = tx
 	_ = key
 
@@ -40,7 +46,7 @@ type Tx struct {
 	Body struct {
 		Messages      []map[string]any
 		Memo          string
-		TimeoutHeight uint64
+		TimeoutHeight uint64 `json:"timeout_height"`
 	}
 	AuthInfo struct {
 		SignerInfos []struct {

@@ -1,5 +1,6 @@
+package codec
+
 // imported from cosmos-sdk/crypto/keyring because of private types *LocalInfo
-package main
 
 import (
 	"fmt"
@@ -149,4 +150,48 @@ func extractPrivKeyFromLocal(rl *cosmoskeyring.Record_Local) (cryptotypes.PrivKe
 	}
 
 	return priv, nil
+}
+
+// LegacyInfoFromLegacyInfo turns a Record into a LegacyInfo.
+func LegacyInfoFromRecord(record *cosmoskeyring.Record) (cosmoskeyring.LegacyInfo, error) {
+	switch record.GetType() {
+	case cosmoskeyring.TypeLocal:
+		pk, err := record.GetPubKey()
+		if err != nil {
+			return nil, err
+		}
+		privKey, err := extractPrivKeyFromLocal(record.GetLocal())
+		if err != nil {
+			return nil, err
+		}
+		privBz, err := Amino.Marshal(privKey)
+		if err != nil {
+			return nil, err
+		}
+		return legacyLocalInfo{
+			Name:         record.Name,
+			PubKey:       pk,
+			Algo:         hd.PubKeyType(pk.Type()),
+			PrivKeyArmor: string(privBz),
+		}, nil
+
+	case cosmoskeyring.TypeLedger:
+		pk, err := record.GetPubKey()
+		if err != nil {
+			return nil, err
+		}
+		return legacyLedgerInfo{
+			Name:   record.Name,
+			PubKey: pk,
+			Algo:   hd.PubKeyType(pk.Type()),
+			Path:   *record.GetLedger().Path,
+		}, nil
+
+	case cosmoskeyring.TypeMulti:
+		panic("record type TypeMulti unhandled")
+
+	case cosmoskeyring.TypeOffline:
+		panic("record type TypeOffline unhandled")
+	}
+	panic(fmt.Sprintf("record type %s unhandled", record.GetType()))
 }

@@ -1,40 +1,23 @@
 package main
 
 import (
-	"encoding/hex"
 	"fmt"
 	"path/filepath"
-	"strings"
 
-	"github.com/99designs/keyring"
-	"github.com/bgentry/speakeasy"
 	"github.com/davecgh/go-spew/spew"
-
-	"github.com/cosmos/cosmos-sdk/crypto/hd"
-	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tbruyelle/legacykey/codec"
+	"github.com/tbruyelle/legacykey/keyring"
 )
 
 func migrateKeys(keyringDir string) error {
-	kr, err := keyring.Open(keyring.Config{
-		AllowedBackends: []keyring.BackendType{keyring.FileBackend},
-		FileDir:         keyringDir,
-		FilePasswordFunc: func(prompt string) (string, error) {
-			return speakeasy.Ask(prompt + ": ")
-		},
-	})
+	kr, err := keyring.New(keyringDir, "")
 	if err != nil {
 		return err
 	}
 	// new keyring for migrated keys
 	aminoKeyringDir := filepath.Join(keyringDir, "amino")
-	aminoKr, err := keyring.Open(keyring.Config{
-		AllowedBackends: []keyring.BackendType{keyring.FileBackend},
-		FileDir:         aminoKeyringDir,
-		FilePasswordFunc: func(prompt string) (string, error) {
-			return speakeasy.Ask(fmt.Sprintf("Enter password for amino keyring %q: ", aminoKeyringDir))
-		},
-	})
+	aminoKr, err := keyring.New(aminoKeyringDir,
+		fmt.Sprintf("Enter password for amino keyring %q: ", aminoKeyringDir))
 	if err != nil {
 		return err
 	}
@@ -43,117 +26,28 @@ func migrateKeys(keyringDir string) error {
 		return err
 	}
 	for _, key := range keys {
-		switch {
-
-		case strings.HasSuffix(key, ".address"):
-			item, err := kr.Get(key)
-			if err != nil {
-				return err
-			}
-			bz, err := hex.DecodeString(strings.TrimSuffix(key, ".address"))
-			if err != nil {
-				return err
-			}
-			addr := sdk.AccAddress(bz)
-			fmt.Printf("%s -> %s - %s\n", key, addr.String(), string(item.Data))
-
-		case strings.HasSuffix(key, ".info"):
-			item, err := kr.Get(key)
-			if err != nil {
-				return err
-			}
-			// Try to decode with proto
-			var record cosmoskeyring.Record
-			errProto := protocodec.Unmarshal(item.Data, &record)
-			if errProto == nil {
-				fmt.Printf("%q (proto encoded)-> %s\n", key, spew.Sdump(record))
-				// Create a new amino key from the proto key
-				// Turn record to legacyInfo
-				info, err := legacyInfoFromRecord(record)
-				if err != nil {
-					return err
-				}
-				// Register new amino key_name.info -> amino encoded LegacyInfo
-				bz, err := aminoCodec.MarshalLengthPrefixed(info)
-				if err != nil {
-					return err
-				}
-				if err := aminoKr.Set(keyring.Item{Key: key, Data: bz}); err != nil {
-					return err
-				}
-				// Register new amino hex_address.address -> key_name
-				addr, err := record.GetAddress()
-				if err != nil {
-					return err
-				}
-				item = keyring.Item{
-					Key:  addrHexKeyAsString(addr),
-					Data: []byte(key),
-				}
-				if err := aminoKr.Set(item); err != nil {
-					return err
-				}
-				// TODO create keyring-dir/keyhash file
-				fmt.Printf("%q re-encoded to amino keyring %q\n", key, aminoKeyringDir)
-				continue
-			}
-			// Try to decode with amino
-			var info cosmoskeyring.LegacyInfo
-			errAmino := aminoCodec.UnmarshalLengthPrefixed(item.Data, &info)
-			if errAmino == nil {
-				fmt.Printf("%q (amino encoded)-> %s\n", key, spew.Sdump(info))
-				continue
-			}
-			fmt.Printf("%q cannot be decoded: errProto=%v, errAmino=%v\n", key, errProto, errAmino)
+		if key.IsAmino() {
+			// this is a amino-encoded key  no migration just display
+			fmt.Printf("%q (amino encoded)-> %s\n", key.Name, spew.Sdump(key.Info))
+			continue
 		}
+		// this is a proto-encoded key let's migrate it back to amino
+		fmt.Printf("%q (proto encoded)-> %s\n", key.Name, spew.Sdump(key.Record))
+		// Turn record to legacyInfo
+		info, err := codec.LegacyInfoFromRecord(key.Record)
+		if err != nil {
+			return err
+		}
+		// Register new amino key_name.info -> amino encoded LegacyInfo
+		bz, err := codec.Amino.MarshalLengthPrefixed(info)
+		if err != nil {
+			return err
+		}
+		if err := aminoKr.Set(key.Name, bz); err != nil {
+			return err
+		}
+		// TODO create keyring-dir/keyhash file
+		fmt.Printf("%q re-encoded to amino keyring %q\n", key, aminoKeyringDir)
 	}
 	return nil
-}
-
-func addrHexKeyAsString(address sdk.Address) string {
-	return fmt.Sprintf("%s.address", hex.EncodeToString(address.Bytes()))
-}
-
-// legacyInfoFromLegacyInfo turns a Record into a LegacyInfo.
-func legacyInfoFromRecord(record cosmoskeyring.Record) (cosmoskeyring.LegacyInfo, error) {
-	switch record.GetType() {
-	case cosmoskeyring.TypeLocal:
-		pk, err := record.GetPubKey()
-		if err != nil {
-			return nil, err
-		}
-		privKey, err := extractPrivKeyFromLocal(record.GetLocal())
-		if err != nil {
-			return nil, err
-		}
-		privBz, err := aminoCodec.Marshal(privKey)
-		if err != nil {
-			return nil, err
-		}
-		return legacyLocalInfo{
-			Name:         record.Name,
-			PubKey:       pk,
-			Algo:         hd.PubKeyType(pk.Type()),
-			PrivKeyArmor: string(privBz),
-		}, nil
-
-	case cosmoskeyring.TypeLedger:
-		pk, err := record.GetPubKey()
-		if err != nil {
-			return nil, err
-		}
-		return legacyLedgerInfo{
-			Name:   record.Name,
-			PubKey: pk,
-			Algo:   hd.PubKeyType(pk.Type()),
-			Path:   *record.GetLedger().Path,
-		}, nil
-
-	case cosmoskeyring.TypeMulti:
-		panic("record type TypeMulti unhandled")
-
-	case cosmoskeyring.TypeOffline:
-		panic("record type TypeOffline unhandled")
-	}
-	panic(fmt.Sprintf("record type %s unhandled", record.GetType()))
 }
