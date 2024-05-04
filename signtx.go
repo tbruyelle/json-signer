@@ -6,12 +6,15 @@ import (
 	"os"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/tbruyelle/legacykey/codec"
 	"github.com/tbruyelle/legacykey/keyring"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
+	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
 )
 
-func signTx(txFile, keyringDir, signer string, account, sequence uint64) error {
+func signTx(txFile, keyringDir, signer, chainID string, account, sequence uint64) error {
 	tx, err := readTxFile(txFile)
 	if err != nil {
 		return err
@@ -35,13 +38,74 @@ func signTx(txFile, keyringDir, signer string, account, sequence uint64) error {
 	}
 	_ = addr
 	_ = signInfo
+	// Prepare bytes to sign
+	signBytes, err := getSignBytes(tx, chainID, account, sequence)
+	if err != nil {
+		return err
+	}
+	// Sign those bytes
+	signature, err := priv.Sign(signBytes)
+	if err != nil {
+		return sigV2, err
+	}
+
+	// Construct the SignatureV2 struct
+	sigData := signing.SingleSignatureData{
+		SignMode:  signMode,
+		Signature: signature,
+	}
+
+	sigV2 = signing.SignatureV2{
+		PubKey:   priv.PubKey(),
+		Data:     &sigData,
+		Sequence: accSeq,
+	}
 
 	return nil
 }
 
+func getSignBytes(tx Tx, chainID string, account, sequence uint64) ([]byte, error) {
+	feeBytes, err := codec.Amino.MarshalJSON(tx.AuthInfo.Fee)
+	if err != nil {
+		return nil, err
+	}
+	msgsBytes := make([]json.RawMessage, 0, len(tx.Body.Messages))
+	for _, msg := range tx.Body.Messages {
+		bz := legacytx.RegressionTestingAminoCodec.MustMarshalJSON(msg)
+		msgsBytes = append(msgsBytes, mustSortJSON(bz))
+	}
+	bz, err := codec.Amino.MarshalJSON(legacytx.StdSignDoc{
+		AccountNumber: account,
+		ChainID:       chainID,
+		Fee:           json.RawMessage(feeBytes),
+		Memo:          tx.Body.Memo,
+		Msgs:          msgsBytes,
+		Sequence:      sequence,
+		TimeoutHeight: tx.Body.TimeoutHeight,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mustSortJSON(bz)
+}
+
+// WTH is that
+func mustSortJSON(bz []byte) []byte {
+	var c any
+	err := json.Unmarshal(bz, &c)
+	if err != nil {
+		panic(err)
+	}
+	js, err := json.Marshal(c)
+	if err != nil {
+		panic(err)
+	}
+	return js
+}
+
 type Tx struct {
 	Body struct {
-		Messages      []map[string]any
+		Messages      []json.RawMessage
 		Memo          string
 		TimeoutHeight string `json:"timeout_height"`
 	}

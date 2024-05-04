@@ -29,20 +29,23 @@ func signTxCmd() *ffcli.Command {
 	fs := flag.NewFlagSet("sign-tx", flag.ContinueOnError)
 	keyringDir := fs.String("keyring-dir", "", "Keyring directory")
 	signer := fs.String("from", "", "Signer key name")
+	chainID := fs.String("chain-id", "", "Chain identifier")
 	account := fs.Uint64("account", 0, "Account number")
 	sequence := fs.Uint64("sequence", 0, "Sequence number")
 	return &ffcli.Command{
 		Name:       "sign-tx",
-		ShortUsage: "legacykey sign-tx <tx.json> -from <key> -keyring-dir <dir> -sequence <sequence> -account <account>",
+		ShortUsage: "legacykey sign-tx <tx.json> -from <key> -keyring-dir <dir> -chain-id <chainID> -sequence <sequence> -account <account>",
 		ShortHelp:  "Sign transaction",
 		FlagSet:    fs,
 		Exec: func(ctx context.Context, args []string) error {
 			fs.Parse(args)
-			// if fs.NArg() != 1 || flag.Lookup("keyring-dir") == nil || flag.Lookup("from") == nil || flag.Lookup("sequence") == nil || flag.Lookup("account") == nil {
-			// return flag.ErrHelp
-			// }
+			if fs.NArg() != 1 || flag.Lookup("keyring-dir") == nil ||
+				flag.Lookup("from") == nil || flag.Lookup("sequence") == nil ||
+				flag.Lookup("account") == nil || flag.Lookup("chain-id") == nil {
+				return flag.ErrHelp
+			}
 			txFile := fs.Arg(0)
-			return signTx(txFile, *keyringDir, *signer, *account, *sequence)
+			return signTx(txFile, *keyringDir, *signer, *chainID, *account, *sequence)
 		},
 	}
 }
