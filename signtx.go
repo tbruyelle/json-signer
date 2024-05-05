@@ -55,14 +55,14 @@ func signTx(txFile, keyringDir, signer, chainID string, account, sequence uint64
 
 	// Construct the SignatureV2 struct
 	sigData := signing.SingleSignatureData{
-		SignMode:  signMode,
+		SignMode:  signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
 		Signature: signature,
 	}
 
 	sigV2 = signing.SignatureV2{
-		PubKey:   priv.PubKey(),
+		PubKey:   pubKey,
 		Data:     &sigData,
-		Sequence: accSeq,
+		Sequence: sequence,
 	}
 
 	return nil
