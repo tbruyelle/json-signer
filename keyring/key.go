@@ -1,6 +1,8 @@
 package keyring
 
 import (
+	"github.com/tbruyelle/legacykey/codec"
+
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 )
@@ -14,10 +16,17 @@ type Key struct {
 }
 
 func (k Key) GetPubKey() (cryptotypes.PubKey, error) {
-	if k.Record != nil {
-		return k.Record.GetPubKey()
+	if k.IsAmino() {
+		return k.Info.GetPubKey(), nil
 	}
-	return k.Info.GetPubKey(), nil
+	return k.Record.GetPubKey()
+}
+
+func (k Key) GetPrivKey() (cryptotypes.PrivKey, error) {
+	if k.IsAmino() {
+		return codec.PrivKeyFromInfo(k.Info)
+	}
+	return codec.PrivKeyFromRecord(k.Record)
 }
 
 func (k Key) IsAmino() bool {

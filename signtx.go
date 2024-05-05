@@ -44,9 +44,13 @@ func signTx(txFile, keyringDir, signer, chainID string, account, sequence uint64
 		return err
 	}
 	// Sign those bytes
-	signature, err := priv.Sign(signBytes)
+	privKey, err := key.GetPrivKey()
 	if err != nil {
-		return sigV2, err
+		return err
+	}
+	signature, err := privKey.Sign(signBytes)
+	if err != nil {
+		return err
 	}
 
 	// Construct the SignatureV2 struct

@@ -152,6 +152,23 @@ func extractPrivKeyFromLocal(rl *cosmoskeyring.Record_Local) (cryptotypes.PrivKe
 	return priv, nil
 }
 
+func PrivKeyFromRecord(record *cosmoskeyring.Record) (cryptotypes.PrivKey, error) {
+	switch record.GetType() {
+	case cosmoskeyring.TypeLocal:
+		return extractPrivKeyFromLocal(record.GetLocal())
+	}
+	return nil, fmt.Errorf("unhandled Record type %q", record.GetType())
+}
+
+func PrivKeyFromInfo(info cosmoskeyring.LegacyInfo) (privKey cryptotypes.PrivKey, err error) {
+	switch info.GetType() {
+	case cosmoskeyring.TypeLocal:
+		err = Amino.Unmarshal([]byte(info.(legacyLocalInfo).GetPrivKeyArmor()), &privKey)
+		return
+	}
+	return nil, fmt.Errorf("unhandled Info type %q", info.GetType())
+}
+
 // LegacyInfoFromLegacyInfo turns a Record into a LegacyInfo.
 func LegacyInfoFromRecord(record *cosmoskeyring.Record) (cosmoskeyring.LegacyInfo, error) {
 	switch record.GetType() {
