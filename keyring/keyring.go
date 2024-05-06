@@ -3,6 +3,7 @@ package keyring
 import (
 	"encoding/hex"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/99designs/keyring"
@@ -24,7 +25,7 @@ func New(keyringDir, alternatePrompt string) (Keyring, error) {
 			if alternatePrompt != "" {
 				prompt = alternatePrompt
 			}
-			return speakeasy.Ask(prompt)
+			return speakeasy.FAsk(os.Stderr, prompt)
 		},
 	})
 	if err != nil {
