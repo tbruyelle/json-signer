@@ -73,16 +73,45 @@ func signTx(txFile, keyringDir, signer, chainID string, account, sequence uint64
 	return nil
 }
 
+var protoToAminoTypeMap = map[string]string{
+	"/cosmos.bank.v1beta1.MsgSend": "cosmos-sdk/MsgSend",
+}
+
 func getBytesToSign(tx Tx, chainID string, account, sequence uint64) ([]byte, error) {
-	feeBytes, err := codec.Amino.MarshalJSON(tx.AuthInfo.Fee)
+	fee := tx.AuthInfo.Fee
+	gas, err := strconv.ParseUint(fee.GasLimit, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	stdFee := legacytx.StdFee{
+		Gas:     gas,
+		Payer:   fee.Payer,
+		Granter: fee.Granter,
+	}
+	for _, a := range fee.Amount {
+		stdFee.Amount = append(stdFee.Amount, sdk.NewCoin(a.Denom, a.Amount))
+	}
+	feeBytes, err := codec.Amino.MarshalJSON(stdFee)
 	if err != nil {
 		return nil, err
 	}
 	msgsBytes := make([]json.RawMessage, 0, len(tx.Body.Messages))
 	for _, msg := range tx.Body.Messages {
-		bz, err := codec.Amino.MarshalJSON(msg)
+		protoType := msg["@type"].(string)
+		aminoType, ok := protoToAminoTypeMap[protoType]
+		if !ok {
+			return nil, fmt.Errorf("Can't find amino mapping for proto @type=%q", protoType)
+		}
+		delete(msg, "@type")
+		aminoMsg := map[string]any{
+			"type":  aminoType,
+			"value": msg,
+		}
+		// TODO try to use stdlib json encoder (and then remove call to mustSortJSON)
+		// bz, err := codec.Amino.MarshalJSON(aminoMsg)
+		bz, err := json.Marshal(aminoMsg)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("marshalling aminoMsg: %v", err)
 		}
 		msgsBytes = append(msgsBytes, mustSortJSON(bz))
 	}
@@ -122,9 +151,9 @@ func mustSortJSON(bz []byte) []byte {
 
 type Tx struct {
 	Body struct {
-		Messages      []json.RawMessage `json:"messages"`
-		Memo          string            `json:"memo"`
-		TimeoutHeight string            `json:"timeout_height"`
+		Messages      []map[string]any `json:"messages"`
+		Memo          string           `json:"memo"`
+		TimeoutHeight string           `json:"timeout_height"`
 	} `json:"body"`
 	AuthInfo struct {
 		SignerInfos []SignerInfo `json:"signer_infos"`
