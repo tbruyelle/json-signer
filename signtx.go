@@ -5,22 +5,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/tbruyelle/legacykey/codec"
 	"github.com/tbruyelle/legacykey/keyring"
 
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/tx"
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 )
 
 func signTx(txFile, keyringDir, signer, chainID string, account, sequence uint64) error {
-	tx, err := readTxFile(txFile)
+	thetx, err := readTxFile(txFile)
 	if err != nil {
 		return err
 	}
-	spew.Dump(tx)
+	spew.Dump(thetx)
 	kr, err := keyring.New(keyringDir, "")
 	if err != nil {
 		return err
@@ -40,7 +42,7 @@ func signTx(txFile, keyringDir, signer, chainID string, account, sequence uint64
 	_ = addr
 	_ = signInfo
 	// Prepare bytes to sign
-	bytesToSign, err := getBytesToSign(tx, chainID, account, sequence)
+	bytesToSign, err := getBytesToSign(thetx, chainID, account, sequence)
 	if err != nil {
 		return err
 	}
@@ -56,15 +58,23 @@ func signTx(txFile, keyringDir, signer, chainID string, account, sequence uint64
 	if err != nil {
 		return err
 	}
-	signerInfo := SignerInfo{
-		PublicKey: pubKey,
-		Sequence:  fmt.Sprint(sequence),
+	any, err := codectypes.NewAnyWithValue(pubKey)
+	if err != nil {
+		return err
 	}
-	signerInfo.ModeInfo.Single.Mode = "SIGN_MODE_LEGACY_AMINO_JSON"
-	tx.AuthInfo.SignerInfos = []SignerInfo{signerInfo}
-	tx.Signatures = [][]byte{signature}
+	signerInfo := &tx.SignerInfo{
+		PublicKey: any,
+		Sequence:  sequence,
+		ModeInfo: &tx.ModeInfo{
+			Sum: &tx.ModeInfo_Single_{
+				Single: &tx.ModeInfo_Single{Mode: signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON},
+			},
+		},
+	}
+	thetx.AuthInfo.SignerInfos = []*tx.SignerInfo{signerInfo}
+	thetx.Signatures = [][]byte{signature}
 
-	bz, err := json.MarshalIndent(tx, "", "  ")
+	bz, err := json.MarshalIndent(thetx, "", "  ")
 	if err != nil {
 		return err
 	}
@@ -73,7 +83,7 @@ func signTx(txFile, keyringDir, signer, chainID string, account, sequence uint64
 	return nil
 }
 
-func getBytesToSign(tx Tx, chainID string, account, sequence uint64) ([]byte, error) {
+func getBytesToSign(tx tx.Tx, chainID string, account, sequence uint64) ([]byte, error) {
 	feeBytes, err := codec.Amino.MarshalJSON(tx.AuthInfo.Fee)
 	if err != nil {
 		return nil, err
@@ -86,10 +96,6 @@ func getBytesToSign(tx Tx, chainID string, account, sequence uint64) ([]byte, er
 		}
 		msgsBytes = append(msgsBytes, mustSortJSON(bz))
 	}
-	timeoutHeight, err := strconv.ParseUint(tx.Body.TimeoutHeight, 10, 64)
-	if err != nil {
-		return nil, err
-	}
 
 	bz, err := codec.Amino.MarshalJSON(legacytx.StdSignDoc{
 		AccountNumber: account,
@@ -98,7 +104,7 @@ func getBytesToSign(tx Tx, chainID string, account, sequence uint64) ([]byte, er
 		Memo:          tx.Body.Memo,
 		Msgs:          msgsBytes,
 		Sequence:      sequence,
-		TimeoutHeight: timeoutHeight,
+		TimeoutHeight: tx.Body.TimeoutHeight,
 	})
 	if err != nil {
 		return nil, err
@@ -122,9 +128,9 @@ func mustSortJSON(bz []byte) []byte {
 
 type Tx struct {
 	Body struct {
-		Messages      []json.RawMessage `json:"messages"`
-		Memo          string            `json:"memo"`
-		TimeoutHeight string            `json:"timeout_height"`
+		Messages      []tx.Tx `json:"messages"`
+		Memo          string  `json:"memo"`
+		TimeoutHeight string  `json:"timeout_height"`
 	} `json:"body"`
 	AuthInfo struct {
 		SignerInfos []SignerInfo `json:"signer_infos"`
@@ -153,15 +159,14 @@ type Coin struct {
 	Amount string `json:"amount"`
 }
 
-func readTxFile(txFile string) (Tx, error) {
-	f, err := os.Open(txFile)
+func readTxFile(txFile string) (tx.Tx, error) {
+	bz, err := os.ReadFile(txFile)
 	if err != nil {
-		return Tx{}, err
+		return tx.Tx{}, err
 	}
-	defer f.Close()
-	var tx Tx
-	if err := json.NewDecoder(f).Decode(&tx); err != nil {
-		return Tx{}, fmt.Errorf("JSON decode %s: %v", txFile, err)
+	var thetx tx.Tx
+	if err := codec.Proto.UnmarshalJSON(bz, &thetx); err != nil {
+		return tx.Tx{}, fmt.Errorf("JSON decode %s: %v", txFile, err)
 	}
-	return tx, nil
+	return thetx, nil
 }
