@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/tbruyelle/legacykey/codec"
 	"github.com/tbruyelle/legacykey/keyring"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/tx/signing"
-	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
+	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 )
 
 func signTx(txFile, keyringDir, signer, chainID string, account, sequence uint64) error {
@@ -52,18 +52,19 @@ func signTx(txFile, keyringDir, signer, chainID string, account, sequence uint64
 	if err != nil {
 		return err
 	}
-
-	// Construct the SignatureV2 struct
-	sigData := signing.SingleSignatureData{
-		SignMode:  signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
-		Signature: signature,
+	signerInfo := SignerInfo{
+		PublicKey: pubKey,
+		Sequence:  fmt.Sprint(sequence),
 	}
+	signerInfo.ModeInfo.Single.Mode = "SIGN_MODE_LEGACY_AMINO_JSON"
+	tx.AuthInfo.SignerInfos = []SignerInfo{signerInfo}
+	tx.Signatures = [][]byte{signature}
 
-	sigV2 = signing.SignatureV2{
-		PubKey:   pubKey,
-		Data:     &sigData,
-		Sequence: sequence,
+	bz, err := json.MarshalIndent(tx, "", "  ")
+	if err != nil {
+		return err
 	}
+	fmt.Println(string(bz))
 
 	return nil
 }
@@ -75,9 +76,17 @@ func getSignBytes(tx Tx, chainID string, account, sequence uint64) ([]byte, erro
 	}
 	msgsBytes := make([]json.RawMessage, 0, len(tx.Body.Messages))
 	for _, msg := range tx.Body.Messages {
-		bz := legacytx.RegressionTestingAminoCodec.MustMarshalJSON(msg)
+		bz, err := codec.Amino.MarshalJSON(msg)
+		if err != nil {
+			return nil, err
+		}
 		msgsBytes = append(msgsBytes, mustSortJSON(bz))
 	}
+	timeoutHeight, err := strconv.ParseUint(tx.Body.TimeoutHeight, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
 	bz, err := codec.Amino.MarshalJSON(legacytx.StdSignDoc{
 		AccountNumber: account,
 		ChainID:       chainID,
@@ -85,12 +94,12 @@ func getSignBytes(tx Tx, chainID string, account, sequence uint64) ([]byte, erro
 		Memo:          tx.Body.Memo,
 		Msgs:          msgsBytes,
 		Sequence:      sequence,
-		TimeoutHeight: tx.Body.TimeoutHeight,
+		TimeoutHeight: timeoutHeight,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return mustSortJSON(bz)
+	return mustSortJSON(bz), nil
 }
 
 // WTH is that
@@ -109,35 +118,35 @@ func mustSortJSON(bz []byte) []byte {
 
 type Tx struct {
 	Body struct {
-		Messages      []json.RawMessage
-		Memo          string
-		TimeoutHeight string `json:"timeout_height"`
-	}
+		Messages      []json.RawMessage `json:"messages"`
+		Memo          string            `json:"memo"`
+		TimeoutHeight string            `json:"timeout_height"`
+	} `json:"body"`
 	AuthInfo struct {
 		SignerInfos []SignerInfo `json:"signer_infos"`
 		Fee         struct {
-			Amount   []Coin
+			Amount   []Coin `json:"amount"`
 			GasLimit string `json:"gas_limit"`
-			Payer    string
-			Granter  string
-		}
+			Payer    string `json:"payer"`
+			Granter  string `json:"granter"`
+		} `json:"fee"`
 	} `json:"auth_info"`
-	Signatures []string
+	Signatures [][]byte `json:"signatures"`
 }
 
 type SignerInfo struct {
 	PublicKey any `json:"public_key"`
 	ModeInfo  struct {
 		Single struct {
-			Mode string
-		}
+			Mode string `json:"mode"`
+		} `json:"single"`
 	} `json:"mode_info"`
-	Sequence string
+	Sequence string `json:"sequence"`
 }
 
 type Coin struct {
-	Denom  string
-	Amount string
+	Denom  string `json:"denom"`
+	Amount string `json:"amount"`
 }
 
 func readTxFile(txFile string) (Tx, error) {

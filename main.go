@@ -34,14 +34,16 @@ func signTxCmd() *ffcli.Command {
 	sequence := fs.Uint64("sequence", 0, "Sequence number")
 	return &ffcli.Command{
 		Name:       "sign-tx",
-		ShortUsage: "legacykey sign-tx <tx.json> -from <key> -keyring-dir <dir> -chain-id <chainID> -sequence <sequence> -account <account>",
+		ShortUsage: "legacykey sign-tx --from <key> --keyring-dir <dir> --chain-id <chainID> --sequence <sequence> --account <account> <tx.json>",
 		ShortHelp:  "Sign transaction",
 		FlagSet:    fs,
 		Exec: func(ctx context.Context, args []string) error {
-			fs.Parse(args)
-			if fs.NArg() != 1 || flag.Lookup("keyring-dir") == nil ||
-				flag.Lookup("from") == nil || flag.Lookup("sequence") == nil ||
-				flag.Lookup("account") == nil || flag.Lookup("chain-id") == nil {
+			if err := fs.Parse(args); err != nil {
+				return err
+			}
+			if fs.NArg() != 1 || fs.Lookup("keyring-dir") == nil ||
+				fs.Lookup("from") == nil || fs.Lookup("sequence") == nil ||
+				fs.Lookup("account") == nil || fs.Lookup("chain-id") == nil {
 				return flag.ErrHelp
 			}
 			txFile := fs.Arg(0)

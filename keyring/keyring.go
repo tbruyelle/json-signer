@@ -61,10 +61,7 @@ func (k Keyring) GetByAddress(addr string) (Key, error) {
 }
 
 func (k Keyring) Get(name string) (Key, error) {
-	if !strings.HasSuffix(name, ".info") {
-		return Key{}, fmt.Errorf("keyring.Get: invalid name %q: require .info suffix", name)
-	}
-	item, err := k.k.Get(name)
+	item, err := k.k.Get(name + ".info")
 	if err != nil {
 		return Key{}, err
 	}
