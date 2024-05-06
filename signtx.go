@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -39,16 +40,19 @@ func signTx(txFile, keyringDir, signer, chainID string, account, sequence uint64
 	_ = addr
 	_ = signInfo
 	// Prepare bytes to sign
-	signBytes, err := getSignBytes(tx, chainID, account, sequence)
+	bytesToSign, err := getBytesToSign(tx, chainID, account, sequence)
 	if err != nil {
 		return err
 	}
+	fmt.Println("BYTESTOSIGN", base64.StdEncoding.EncodeToString(bytesToSign))
+	fmt.Println(string(bytesToSign))
+
 	// Sign those bytes
 	privKey, err := key.GetPrivKey()
 	if err != nil {
 		return err
 	}
-	signature, err := privKey.Sign(signBytes)
+	signature, err := privKey.Sign(bytesToSign)
 	if err != nil {
 		return err
 	}
@@ -69,7 +73,7 @@ func signTx(txFile, keyringDir, signer, chainID string, account, sequence uint64
 	return nil
 }
 
-func getSignBytes(tx Tx, chainID string, account, sequence uint64) ([]byte, error) {
+func getBytesToSign(tx Tx, chainID string, account, sequence uint64) ([]byte, error) {
 	feeBytes, err := codec.Amino.MarshalJSON(tx.AuthInfo.Fee)
 	if err != nil {
 		return nil, err
@@ -125,10 +129,10 @@ type Tx struct {
 	AuthInfo struct {
 		SignerInfos []SignerInfo `json:"signer_infos"`
 		Fee         struct {
-			Amount   []Coin `json:"amount"`
-			GasLimit string `json:"gas_limit"`
-			Payer    string `json:"payer"`
-			Granter  string `json:"granter"`
+			Amount   []Coin `json:"amount,omitempty"`
+			GasLimit string `json:"gas_limit,omitempty"`
+			Payer    string `json:"payer,omitempty"`
+			Granter  string `json:"granter,omitempty"`
 		} `json:"fee"`
 	} `json:"auth_info"`
 	Signatures [][]byte `json:"signatures"`
