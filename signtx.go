@@ -107,14 +107,11 @@ func getBytesToSign(tx Tx, chainID string, account, sequence uint64) ([]byte, er
 			"type":  aminoType,
 			"value": aminoValue,
 		}
-
-		// TODO try to use stdlib json encoder (and then remove call to mustSortJSON)
-		// bz, err := codec.Amino.MarshalJSON(aminoMsg)
 		bz, err := json.Marshal(aminoMsg)
 		if err != nil {
 			return nil, fmt.Errorf("marshalling aminoMsg: %v", err)
 		}
-		msgsBytes = append(msgsBytes, mustSortJSON(bz))
+		msgsBytes = append(msgsBytes, bz)
 	}
 	feeBytes, err := codec.Amino.MarshalJSON(stdFee)
 	if err != nil {
@@ -137,6 +134,8 @@ func getBytesToSign(tx Tx, chainID string, account, sequence uint64) ([]byte, er
 	if err != nil {
 		return nil, err
 	}
+	// TODO ensure this is really required, maybe we can just use the stdlib
+	// json encoder
 	return mustSortJSON(bz), nil
 }
 
