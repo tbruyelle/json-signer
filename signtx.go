@@ -1,18 +1,17 @@
 package main
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/tbruyelle/legacykey/codec"
 	"github.com/tbruyelle/legacykey/keyring"
 
 	"cosmossdk.io/math"
 
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 )
@@ -22,7 +21,6 @@ func signTx(txFile, keyringDir, signer, chainID string, account, sequence uint64
 	if err != nil {
 		return err
 	}
-	spew.Dump(tx)
 	kr, err := keyring.New(keyringDir, "")
 	if err != nil {
 		return err
@@ -31,23 +29,12 @@ func signTx(txFile, keyringDir, signer, chainID string, account, sequence uint64
 	if err != nil {
 		return err
 	}
-	pubKey, err := key.GetPubKey()
-	if err != nil {
-		return err
-	}
-	addr := sdk.AccAddress(pubKey.Address())
-	signInfo := SignerInfo{
-		PublicKey: pubKey,
-	}
-	_ = addr
-	_ = signInfo
 	// Prepare bytes to sign
 	bytesToSign, err := getBytesToSign(tx, chainID, account, sequence)
 	if err != nil {
 		return err
 	}
-	fmt.Println("BYTESTOSIGN", base64.StdEncoding.EncodeToString(bytesToSign))
-	fmt.Println(string(bytesToSign))
+	// fmt.Println("BYTESTOSIGN", string(bytesToSign))
 
 	// Sign those bytes
 	privKey, err := key.GetPrivKey()
@@ -58,14 +45,20 @@ func signTx(txFile, keyringDir, signer, chainID string, account, sequence uint64
 	if err != nil {
 		return err
 	}
-	signerInfo := SignerInfo{
-		PublicKey: pubKey,
-		Sequence:  fmt.Sprint(sequence),
-	}
-	signerInfo.ModeInfo.Single.Mode = "SIGN_MODE_LEGACY_AMINO_JSON"
-	tx.AuthInfo.SignerInfos = []SignerInfo{signerInfo}
-	tx.Signatures = [][]byte{signature}
 
+	// Update tx with signature and signer infos
+	tx.Signatures = [][]byte{signature}
+	pubKey := privKey.PubKey()
+	tx.AuthInfo.SignerInfos = []SignerInfo{{
+		PublicKey: map[string]any{
+			"@type": codectypes.MsgTypeURL(pubKey),
+			"key":   pubKey.Bytes(),
+		},
+		Sequence: fmt.Sprint(sequence),
+	}}
+	tx.AuthInfo.SignerInfos[0].ModeInfo.Single.Mode = "SIGN_MODE_LEGACY_AMINO_JSON"
+
+	// Output tx
 	bz, err := json.MarshalIndent(tx, "", "  ")
 	if err != nil {
 		return err
