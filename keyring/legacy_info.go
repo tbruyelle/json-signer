@@ -1,9 +1,11 @@
-package codec
+package keyring
 
 // imported from cosmos-sdk/crypto/keyring because of private types *LocalInfo
 
 import (
 	"fmt"
+
+	"github.com/tbruyelle/legacykey/codec"
 
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -16,6 +18,14 @@ var (
 	_ cosmoskeyring.LegacyInfo = &legacyLedgerInfo{}
 	_ cosmoskeyring.LegacyInfo = &legacyOfflineInfo{}
 )
+
+func init() {
+	codec.Amino.RegisterInterface((*cosmoskeyring.LegacyInfo)(nil), nil)
+	codec.Amino.RegisterConcrete(hd.BIP44Params{}, "crypto/keys/hd/BIP44Params", nil)
+	codec.Amino.RegisterConcrete(legacyLocalInfo{}, "crypto/keys/localInfo", nil)
+	codec.Amino.RegisterConcrete(legacyLedgerInfo{}, "crypto/keys/ledgerInfo", nil)
+	codec.Amino.RegisterConcrete(legacyOfflineInfo{}, "crypto/keys/offlineInfo", nil)
+}
 
 // legacyLocalInfo is the public information about a locally stored key
 // Note: Algo must be last field in struct for backwards amino compatibility
@@ -152,7 +162,7 @@ func extractPrivKeyFromLocal(rl *cosmoskeyring.Record_Local) (cryptotypes.PrivKe
 	return priv, nil
 }
 
-func PrivKeyFromRecord(record *cosmoskeyring.Record) (cryptotypes.PrivKey, error) {
+func privKeyFromRecord(record *cosmoskeyring.Record) (cryptotypes.PrivKey, error) {
 	switch record.GetType() {
 	case cosmoskeyring.TypeLocal:
 		return extractPrivKeyFromLocal(record.GetLocal())
@@ -160,10 +170,10 @@ func PrivKeyFromRecord(record *cosmoskeyring.Record) (cryptotypes.PrivKey, error
 	return nil, fmt.Errorf("unhandled Record type %q", record.GetType())
 }
 
-func PrivKeyFromInfo(info cosmoskeyring.LegacyInfo) (privKey cryptotypes.PrivKey, err error) {
+func privKeyFromInfo(info cosmoskeyring.LegacyInfo) (privKey cryptotypes.PrivKey, err error) {
 	switch info.GetType() {
 	case cosmoskeyring.TypeLocal:
-		err = Amino.Unmarshal([]byte(info.(legacyLocalInfo).GetPrivKeyArmor()), &privKey)
+		err = codec.Amino.Unmarshal([]byte(info.(legacyLocalInfo).GetPrivKeyArmor()), &privKey)
 		return
 	}
 	return nil, fmt.Errorf("unhandled Info type %q", info.GetType())
@@ -181,7 +191,7 @@ func LegacyInfoFromRecord(record *cosmoskeyring.Record) (cosmoskeyring.LegacyInf
 		if err != nil {
 			return nil, err
 		}
-		privBz, err := Amino.Marshal(privKey)
+		privBz, err := codec.Amino.Marshal(privKey)
 		if err != nil {
 			return nil, err
 		}

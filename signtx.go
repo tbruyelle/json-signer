@@ -25,7 +25,7 @@ func signTx(txFile, keyringDir, signer, chainID string, account, sequence uint64
 	if err != nil {
 		return err
 	}
-	key, err := kr.Get(signer)
+	key, err := kr.Get(signer + ".info")
 	if err != nil {
 		return err
 	}

@@ -58,11 +58,11 @@ func (k Keyring) GetByAddress(addr string) (Key, error) {
 	if err != nil {
 		return Key{}, err
 	}
-	return k.Get(string(item.Data))
+	return k.Get(string(item.Data) + ".info")
 }
 
 func (k Keyring) Get(name string) (Key, error) {
-	item, err := k.k.Get(name + ".info")
+	item, err := k.k.Get(name)
 	if err != nil {
 		return Key{}, err
 	}

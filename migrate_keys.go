@@ -34,7 +34,7 @@ func migrateKeys(keyringDir string) error {
 		// this is a proto-encoded key let's migrate it back to amino
 		fmt.Printf("%q (proto encoded)-> %s\n", key.Name, spew.Sdump(key.Record))
 		// Turn record to legacyInfo
-		info, err := codec.LegacyInfoFromRecord(key.Record)
+		info, err := keyring.LegacyInfoFromRecord(key.Record)
 		if err != nil {
 			return err
 		}
