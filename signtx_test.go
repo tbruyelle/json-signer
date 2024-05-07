@@ -52,3 +52,8 @@ func TestGetBytesToSign(t *testing.T) {
 		})
 	}
 }
+
+func TestSignTx(t *testing.T) {
+	// TODO ensure that SignerInfo & signatures are properly filled
+	// Must create a fake keyring with a forged priv key
+}
