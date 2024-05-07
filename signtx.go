@@ -11,6 +11,8 @@ import (
 	"github.com/tbruyelle/legacykey/codec"
 	"github.com/tbruyelle/legacykey/keyring"
 
+	"cosmossdk.io/math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 )
@@ -89,7 +91,11 @@ func getBytesToSign(tx Tx, chainID string, account, sequence uint64) ([]byte, er
 		Granter: fee.Granter,
 	}
 	for _, a := range fee.Amount {
-		stdFee.Amount = append(stdFee.Amount, sdk.NewCoin(a.Denom, a.Amount))
+		amount, ok := math.NewIntFromString(a.Amount)
+		if !ok {
+			return nil, fmt.Errorf("Cannot get math.Int from %q", a.Amount)
+		}
+		stdFee.Amount = append(stdFee.Amount, sdk.NewCoin(a.Denom, amount))
 	}
 	feeBytes, err := codec.Amino.MarshalJSON(stdFee)
 	if err != nil {
@@ -150,21 +156,27 @@ func mustSortJSON(bz []byte) []byte {
 }
 
 type Tx struct {
-	Body struct {
-		Messages      []map[string]any `json:"messages"`
-		Memo          string           `json:"memo"`
-		TimeoutHeight string           `json:"timeout_height"`
-	} `json:"body"`
-	AuthInfo struct {
-		SignerInfos []SignerInfo `json:"signer_infos"`
-		Fee         struct {
-			Amount   []Coin `json:"amount,omitempty"`
-			GasLimit string `json:"gas_limit,omitempty"`
-			Payer    string `json:"payer,omitempty"`
-			Granter  string `json:"granter,omitempty"`
-		} `json:"fee"`
-	} `json:"auth_info"`
+	Body       Body     `json:"body"`
+	AuthInfo   AuthInfo `json:"auth_info"`
 	Signatures [][]byte `json:"signatures"`
+}
+
+type Body struct {
+	Messages      []map[string]any `json:"messages"`
+	Memo          string           `json:"memo"`
+	TimeoutHeight string           `json:"timeout_height"`
+}
+
+type AuthInfo struct {
+	SignerInfos []SignerInfo `json:"signer_infos"`
+	Fee         Fee          `json:"fee"`
+}
+
+type Fee struct {
+	Amount   []Coin `json:"amount,omitempty"`
+	GasLimit string `json:"gas_limit,omitempty"`
+	Payer    string `json:"payer,omitempty"`
+	Granter  string `json:"granter,omitempty"`
 }
 
 type SignerInfo struct {
