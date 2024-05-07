@@ -97,10 +97,6 @@ func getBytesToSign(tx Tx, chainID string, account, sequence uint64) ([]byte, er
 		}
 		stdFee.Amount = append(stdFee.Amount, sdk.NewCoin(a.Denom, amount))
 	}
-	feeBytes, err := codec.Amino.MarshalJSON(stdFee)
-	if err != nil {
-		return nil, err
-	}
 	msgsBytes := make([]json.RawMessage, 0, len(tx.Body.Messages))
 	for _, msg := range tx.Body.Messages {
 		protoType := msg["@type"].(string)
@@ -108,11 +104,17 @@ func getBytesToSign(tx Tx, chainID string, account, sequence uint64) ([]byte, er
 		if !ok {
 			return nil, fmt.Errorf("Can't find amino mapping for proto @type=%q", protoType)
 		}
-		delete(msg, "@type")
+		aminoValue := make(map[string]any)
+		for k, v := range msg {
+			if k != "@type" {
+				aminoValue[k] = v
+			}
+		}
 		aminoMsg := map[string]any{
 			"type":  aminoType,
-			"value": msg,
+			"value": aminoValue,
 		}
+
 		// TODO try to use stdlib json encoder (and then remove call to mustSortJSON)
 		// bz, err := codec.Amino.MarshalJSON(aminoMsg)
 		bz, err := json.Marshal(aminoMsg)
@@ -120,6 +122,10 @@ func getBytesToSign(tx Tx, chainID string, account, sequence uint64) ([]byte, er
 			return nil, fmt.Errorf("marshalling aminoMsg: %v", err)
 		}
 		msgsBytes = append(msgsBytes, mustSortJSON(bz))
+	}
+	feeBytes, err := codec.Amino.MarshalJSON(stdFee)
+	if err != nil {
+		return nil, err
 	}
 	timeoutHeight, err := strconv.ParseUint(tx.Body.TimeoutHeight, 10, 64)
 	if err != nil {
