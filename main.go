@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 
@@ -46,10 +48,34 @@ func signTxCmd() *ffcli.Command {
 				fs.Lookup("account") == nil || fs.Lookup("chain-id") == nil {
 				return flag.ErrHelp
 			}
-			txFile := fs.Arg(0)
-			return signTx(txFile, *keyringDir, *signer, *chainID, *account, *sequence)
+			tx, err := readTxFile(fs.Arg(0))
+			if err != nil {
+				return err
+			}
+			signedTx, err := signTx(tx, *keyringDir, *signer, *chainID, *account, *sequence)
+
+			// Output tx
+			bz, err := json.MarshalIndent(signedTx, "", "  ")
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(bz))
+			return nil
 		},
 	}
+}
+
+func readTxFile(txFile string) (Tx, error) {
+	f, err := os.Open(txFile)
+	if err != nil {
+		return Tx{}, err
+	}
+	defer f.Close()
+	var tx Tx
+	if err := json.NewDecoder(f).Decode(&tx); err != nil {
+		return Tx{}, fmt.Errorf("JSON decode %s: %v", txFile, err)
+	}
+	return tx, nil
 }
 
 func migrateKeysCmd() *ffcli.Command {

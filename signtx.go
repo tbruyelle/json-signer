@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/tbruyelle/legacykey/codec"
@@ -16,34 +15,30 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 )
 
-func signTx(txFile, keyringDir, signer, chainID string, account, sequence uint64) error {
-	tx, err := readTxFile(txFile)
-	if err != nil {
-		return err
-	}
+func signTx(tx Tx, keyringDir, signer, chainID string, account, sequence uint64) (Tx, error) {
 	kr, err := keyring.New(keyringDir, nil)
 	if err != nil {
-		return err
+		return Tx{}, err
 	}
 	key, err := kr.Get(signer + ".info")
 	if err != nil {
-		return err
+		return Tx{}, err
 	}
 	// Prepare bytes to sign
 	bytesToSign, err := getBytesToSign(tx, chainID, account, sequence)
 	if err != nil {
-		return err
+		return Tx{}, err
 	}
 	// fmt.Println("BYTESTOSIGN", string(bytesToSign))
 
 	// Sign those bytes
 	privKey, err := key.GetPrivKey()
 	if err != nil {
-		return err
+		return Tx{}, err
 	}
 	signature, err := privKey.Sign(bytesToSign)
 	if err != nil {
-		return err
+		return Tx{}, err
 	}
 
 	// Update tx with signature and signer infos
@@ -57,15 +52,7 @@ func signTx(txFile, keyringDir, signer, chainID string, account, sequence uint64
 		Sequence: fmt.Sprint(sequence),
 	}}
 	tx.AuthInfo.SignerInfos[0].ModeInfo.Single.Mode = "SIGN_MODE_LEGACY_AMINO_JSON"
-
-	// Output tx
-	bz, err := json.MarshalIndent(tx, "", "  ")
-	if err != nil {
-		return err
-	}
-	fmt.Println(string(bz))
-
-	return nil
+	return tx, nil
 }
 
 var protoToAminoTypeMap = map[string]string{
@@ -190,17 +177,4 @@ type SignerInfo struct {
 type Coin struct {
 	Denom  string `json:"denom"`
 	Amount string `json:"amount"`
-}
-
-func readTxFile(txFile string) (Tx, error) {
-	f, err := os.Open(txFile)
-	if err != nil {
-		return Tx{}, err
-	}
-	defer f.Close()
-	var tx Tx
-	if err := json.NewDecoder(f).Decode(&tx); err != nil {
-		return Tx{}, fmt.Errorf("JSON decode %s: %v", txFile, err)
-	}
-	return tx, nil
 }

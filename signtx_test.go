@@ -6,6 +6,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tbruyelle/legacykey/keyring"
 
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
+
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 )
 
@@ -57,12 +59,61 @@ func TestGetBytesToSign(t *testing.T) {
 }
 
 func TestSignTx(t *testing.T) {
-	kr, err := keyring.New(t.TempDir(), func(_ string) (string, error) { return "test", nil })
-	if err != nil {
-		t.Fatal(err)
+	keyringDir := t.TempDir()
+	kr, err := keyring.New(keyringDir,
+		func(_ string) (string, error) { return "test", nil })
+	require.NoError(t, err)
+	// Generate a local private key
+	privkey := ed25519.GenPrivKey()
+	record, err := cosmoskeyring.NewLocalRecord("local", privkey, privkey.PubKey())
+	require.NoError(t, err)
+	kr.AddProto("local.info", record)
+	bankSendTx := Tx{
+		Body: Body{
+			Messages: []map[string]any{{
+				"@type": "/cosmos.bank.v1beta1.MsgSend",
+				"amount": []Coin{{
+					Amount: "1000",
+					Denom:  "token",
+				}},
+				"from_address": "cosmos1shzsqakdakzwhvy05cvjlt9acwf3hfjksy0ht5",
+				"to_address":   "cosmos18lu8k4n7nmqhz2z3y9a5y39fzgapchfq6mvaeg",
+			}},
+			Memo:          "a memo",
+			TimeoutHeight: "42",
+		},
+		AuthInfo: AuthInfo{
+			Fee: Fee{
+				Amount: []Coin{{
+					Amount: "10",
+					Denom:  "token",
+				}},
+				GasLimit: "200000",
+			},
+		},
 	}
-	// TODO create private key
-	kr.AddProto("test.info", cosmoskeyring.NewLocalRecord())
+	tests := []struct {
+		name             string
+		keyname          string
+		tx               Tx
+		expectedSignedTx Tx
+	}{
+		{
+			name:    "local key",
+			keyname: "local",
+			tx:      bankSendTx,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require := require.New(t)
+
+			signedTx, err := signTx(tt.tx, keyringDir, tt.keyname, "chain-id", 42, 1)
+
+			require.NoError(err)
+			require.Equal(tt.expectedSignedTx, signedTx)
+		})
+	}
 
 	// TODO ensure that SignerInfo & signatures are properly filled
 	// Must create a fake keyring with a forged priv key
