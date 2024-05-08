@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/tbruyelle/legacykey/keyring"
 )
 
 func main() {
@@ -52,7 +53,11 @@ func signTxCmd() *ffcli.Command {
 			if err != nil {
 				return err
 			}
-			signedTx, err := signTx(tx, *keyringDir, *signer, *chainID, *account, *sequence)
+			kr, err := keyring.New(*keyringDir, nil)
+			if err != nil {
+				return err
+			}
+			signedTx, err := signTx(tx, kr, *signer, *chainID, *account, *sequence)
 
 			// Output tx
 			bz, err := json.MarshalIndent(signedTx, "", "  ")

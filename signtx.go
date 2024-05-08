@@ -15,11 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 )
 
-func signTx(tx Tx, keyringDir, signer, chainID string, account, sequence uint64) (Tx, error) {
-	kr, err := keyring.New(keyringDir, nil)
-	if err != nil {
-		return Tx{}, err
-	}
+func signTx(tx Tx, kr keyring.Keyring, signer, chainID string, account, sequence uint64) (Tx, error) {
 	key, err := kr.Get(signer + ".info")
 	if err != nil {
 		return Tx{}, err
