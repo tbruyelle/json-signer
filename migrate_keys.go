@@ -9,14 +9,13 @@ import (
 )
 
 func migrateKeys(keyringDir string) error {
-	kr, err := keyring.New(keyringDir, "")
+	kr, err := keyring.New(keyringDir, nil)
 	if err != nil {
 		return err
 	}
 	// new keyring for migrated keys
 	aminoKeyringDir := filepath.Join(keyringDir, "amino")
-	aminoKr, err := keyring.New(aminoKeyringDir,
-		fmt.Sprintf("Enter password for amino keyring %q: ", aminoKeyringDir))
+	aminoKr, err := keyring.New(aminoKeyringDir, nil)
 	if err != nil {
 		return err
 	}
@@ -32,12 +31,12 @@ func migrateKeys(keyringDir string) error {
 		}
 		// this is a proto-encoded key let's migrate it back to amino
 		fmt.Printf("%q (proto encoded)-> %s\n", key.Name, spew.Sdump(key.Record))
-		bz, err := key.ToProto()
+		info, err := key.RecordToInfo()
 		if err != nil {
 			return err
 		}
 		// Register new amino key_name.info -> amino encoded LegacyInfo
-		if err := aminoKr.Set(key.Name, bz); err != nil {
+		if err := aminoKr.AddAmino(key.Name, info); err != nil {
 			return err
 		}
 		// TODO create keyring-dir/keyhash file

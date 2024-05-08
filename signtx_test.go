@@ -4,6 +4,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/tbruyelle/legacykey/keyring"
+
+	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 )
 
 func TestGetBytesToSign(t *testing.T) {
@@ -54,6 +57,13 @@ func TestGetBytesToSign(t *testing.T) {
 }
 
 func TestSignTx(t *testing.T) {
+	kr, err := keyring.New(t.TempDir(), func(_ string) (string, error) { return "test", nil })
+	if err != nil {
+		t.Fatal(err)
+	}
+	// TODO create private key
+	kr.AddProto("test.info", cosmoskeyring.NewLocalRecord())
+
 	// TODO ensure that SignerInfo & signatures are properly filled
 	// Must create a fake keyring with a forged priv key
 }

@@ -21,7 +21,7 @@ func signTx(txFile, keyringDir, signer, chainID string, account, sequence uint64
 	if err != nil {
 		return err
 	}
-	kr, err := keyring.New(keyringDir, "")
+	kr, err := keyring.New(keyringDir, nil)
 	if err != nil {
 		return err
 	}

@@ -17,16 +17,16 @@ type Keyring struct {
 	k keyring.Keyring
 }
 
-func New(keyringDir, alternatePrompt string) (Keyring, error) {
+func New(keyringDir string, filePasswordFunc func(string) (string, error)) (Keyring, error) {
+	if filePasswordFunc == nil {
+		filePasswordFunc = func(_ string) (string, error) {
+			return speakeasy.FAsk(os.Stderr, fmt.Sprintf("Enter password for keyring %q: ", keyringDir))
+		}
+	}
 	k, err := keyring.Open(keyring.Config{
-		AllowedBackends: []keyring.BackendType{keyring.FileBackend},
-		FileDir:         keyringDir,
-		FilePasswordFunc: func(prompt string) (string, error) {
-			if alternatePrompt != "" {
-				prompt = alternatePrompt
-			}
-			return speakeasy.FAsk(os.Stderr, prompt)
-		},
+		AllowedBackends:  []keyring.BackendType{keyring.FileBackend},
+		FileDir:          keyringDir,
+		FilePasswordFunc: filePasswordFunc,
 	})
 	if err != nil {
 		return Keyring{}, err
@@ -82,6 +82,18 @@ func (k Keyring) Get(name string) (Key, error) {
 	return Key{}, fmt.Errorf("cannot decode key %s: decodeProto=%v decodeAmino=%v", name, errProto, errAmino)
 }
 
-func (k Keyring) Set(name string, bz []byte) error {
+func (k Keyring) AddAmino(name string, info cosmoskeyring.LegacyInfo) error {
+	bz, err := codec.Amino.MarshalLengthPrefixed(info)
+	if err != nil {
+		return err
+	}
+	return k.k.Set(keyring.Item{Key: name, Data: bz})
+}
+
+func (k Keyring) AddProto(name string, record *cosmoskeyring.Record) error {
+	bz, err := codec.Proto.Marshal(record)
+	if err != nil {
+		return err
+	}
 	return k.k.Set(keyring.Item{Key: name, Data: bz})
 }

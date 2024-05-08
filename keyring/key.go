@@ -36,13 +36,8 @@ func (k Key) IsAmino() bool {
 	return k.Info != nil
 }
 
-func (k Key) ToProto() ([]byte, error) {
-	// Turn record to legacyInfo
-	info, err := legacyInfoFromRecord(k.Record)
-	if err != nil {
-		return nil, err
-	}
-	return codec.Amino.MarshalLengthPrefixed(info)
+func (k Key) RecordToInfo() (cosmoskeyring.LegacyInfo, error) {
+	return legacyInfoFromRecord(k.Record)
 }
 
 func extractPrivKeyFromLocal(rl *cosmoskeyring.Record_Local) (cryptotypes.PrivKey, error) {
