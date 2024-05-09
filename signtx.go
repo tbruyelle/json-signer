@@ -45,9 +45,13 @@ func signTx(tx Tx, kr keyring.Keyring, signer, chainID string, account, sequence
 			"@type": codectypes.MsgTypeURL(pubKey),
 			"key":   pubKey.Bytes(),
 		},
+		ModeInfo: ModeInfo{
+			Single: Single{
+				Mode: "SIGN_MODE_LEGACY_AMINO_JSON",
+			},
+		},
 		Sequence: fmt.Sprint(sequence),
 	}}
-	tx.AuthInfo.SignerInfos[0].ModeInfo.Single.Mode = "SIGN_MODE_LEGACY_AMINO_JSON"
 	return tx, nil
 }
 
@@ -161,13 +165,17 @@ type Fee struct {
 }
 
 type SignerInfo struct {
-	PublicKey any `json:"public_key"`
-	ModeInfo  struct {
-		Single struct {
-			Mode string `json:"mode"`
-		} `json:"single"`
-	} `json:"mode_info"`
-	Sequence string `json:"sequence"`
+	PublicKey any      `json:"public_key"`
+	ModeInfo  ModeInfo `json:"mode_info"`
+	Sequence  string   `json:"sequence"`
+}
+
+type ModeInfo struct {
+	Single Single `json:"single"`
+}
+
+type Single struct {
+	Mode string `json:"mode"`
 }
 
 type Coin struct {
