@@ -35,6 +35,7 @@ func signTxCmd() *ffcli.Command {
 	chainID := fs.String("chain-id", "", "Chain identifier")
 	account := fs.Uint64("account", 0, "Account number")
 	sequence := fs.Uint64("sequence", 0, "Sequence number")
+	bytesToSignFile := fs.String("bytes-to-sign-file", "", "Path to file that contains the bytes to sign in base64 std format")
 	return &ffcli.Command{
 		Name:       "sign-tx",
 		ShortUsage: "legacykey sign-tx --from <key> --keyring-dir <dir> --chain-id <chainID> --sequence <sequence> --account <account> <tx.json>",
@@ -57,7 +58,19 @@ func signTxCmd() *ffcli.Command {
 			if err != nil {
 				return err
 			}
-			signedTx, err := signTx(tx, kr, *signer, *chainID, *account, *sequence)
+			var bytesToSign string
+			if *bytesToSignFile != "" {
+				bz, err := os.ReadFile(*bytesToSignFile)
+				if err != nil {
+					return err
+				}
+				bytesToSign = string(bz)
+			}
+
+			signedTx, err := signTx(tx, kr, *signer, *chainID, *account, *sequence, bytesToSign)
+			if err != nil {
+				return err
+			}
 
 			// Output tx
 			bz, err := json.MarshalIndent(signedTx, "", "  ")

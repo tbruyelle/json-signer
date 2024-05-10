@@ -132,7 +132,7 @@ func TestSignTx(t *testing.T) {
 			require := require.New(t)
 			assert := assert.New(t)
 
-			signedTx, err := signTx(tt.tx, kr, tt.keyname, "chain-id", 42, 1)
+			signedTx, err := signTx(tt.tx, kr, tt.keyname, "chain-id", 42, 1, "")
 
 			require.NoError(err)
 			assert.Equal(tt.expectedSignerInfos, signedTx.AuthInfo.SignerInfos)

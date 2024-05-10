@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -15,13 +16,19 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 )
 
-func signTx(tx Tx, kr keyring.Keyring, signer, chainID string, account, sequence uint64) (Tx, error) {
+func signTx(tx Tx, kr keyring.Keyring, signer, chainID string, account, sequence uint64, bytesToSignBase64 string) (Tx, error) {
 	key, err := kr.Get(signer + ".info")
 	if err != nil {
 		return Tx{}, err
 	}
-	// Prepare bytes to sign
-	bytesToSign, err := getBytesToSign(tx, chainID, account, sequence)
+	var bytesToSign []byte
+	if bytesToSignBase64 != "" {
+		// Get bytesTosign from parameter
+		bytesToSign, err = base64.StdEncoding.DecodeString(bytesToSignBase64)
+	} else {
+		// Get bytesToSign from tx
+		bytesToSign, err = getBytesToSign(tx, chainID, account, sequence)
+	}
 	if err != nil {
 		return Tx{}, err
 	}
@@ -56,7 +63,9 @@ func signTx(tx Tx, kr keyring.Keyring, signer, chainID string, account, sequence
 }
 
 var protoToAminoTypeMap = map[string]string{
-	"/cosmos.bank.v1beta1.MsgSend": "cosmos-sdk/MsgSend",
+	"/cosmos.bank.v1beta1.MsgSend":          "cosmos-sdk/MsgSend",
+	"/govgen.gov.v1beta1.MsgSubmitProposal": "cosmos-sdk/MsgSubmitProposal",
+	"/govgen.gov.v1beta1.TextProposal":      "cosmos-sdk/TextProposal",
 }
 
 func getBytesToSign(tx Tx, chainID string, account, sequence uint64) ([]byte, error) {
@@ -79,20 +88,9 @@ func getBytesToSign(tx Tx, chainID string, account, sequence uint64) ([]byte, er
 	}
 	msgsBytes := make([]json.RawMessage, 0, len(tx.Body.Messages))
 	for _, msg := range tx.Body.Messages {
-		protoType := msg["@type"].(string)
-		aminoType, ok := protoToAminoTypeMap[protoType]
-		if !ok {
-			return nil, fmt.Errorf("Can't find amino mapping for proto @type=%q", protoType)
-		}
-		aminoValue := make(map[string]any)
-		for k, v := range msg {
-			if k != "@type" {
-				aminoValue[k] = v
-			}
-		}
-		aminoMsg := map[string]any{
-			"type":  aminoType,
-			"value": aminoValue,
+		aminoMsg, err := aminoMapping(msg)
+		if err != nil {
+			return nil, err
 		}
 		bz, err := json.Marshal(aminoMsg)
 		if err != nil {
@@ -124,6 +122,44 @@ func getBytesToSign(tx Tx, chainID string, account, sequence uint64) ([]byte, er
 	// TODO ensure this is really required, maybe we can just use the stdlib
 	// json encoder
 	return mustSortJSON(bz), nil
+}
+
+// TODO improve
+func aminoMapping(m map[string]any) (map[string]any, error) {
+	if protoType, ok := m["@type"].(string); ok {
+		aminoType, ok := protoToAminoTypeMap[protoType]
+		if !ok {
+			return nil, fmt.Errorf("Can't find amino mapping for proto @type=%q", protoType)
+		}
+		aminoValue := make(map[string]any)
+		for k, v := range m {
+			if k != "@type" {
+				if mm, ok := v.(map[string]any); ok {
+					var err error
+					aminoValue[k], err = aminoMapping(mm)
+					if err != nil {
+						return nil, err
+					}
+				} else {
+					aminoValue[k] = v
+				}
+			}
+		}
+		return map[string]any{
+			"type":  aminoType,
+			"value": aminoValue,
+		}, nil
+	}
+	for k, v := range m {
+		if mm, ok := v.(map[string]any); ok {
+			var err error
+			m[k], err = aminoMapping(mm)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	return m, nil
 }
 
 // WTH is that
