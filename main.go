@@ -64,6 +64,7 @@ func signTxCmd() *ffcli.Command {
 				if err != nil {
 					return err
 				}
+				// TODO test with direct sign mode
 				bytesToSign = string(bz)
 			}
 
