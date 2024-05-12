@@ -8,6 +8,7 @@ import (
 
 	"github.com/tbruyelle/legacykey/codec"
 	"github.com/tbruyelle/legacykey/keyring"
+	"golang.org/x/exp/maps"
 
 	"cosmossdk.io/math"
 
@@ -88,11 +89,7 @@ func getBytesToSign(tx Tx, chainID string, account, sequence uint64) ([]byte, er
 	}
 	msgsBytes := make([]json.RawMessage, 0, len(tx.Body.Messages))
 	for _, msg := range tx.Body.Messages {
-		aminoMsg, err := aminoMapping(msg)
-		if err != nil {
-			return nil, err
-		}
-		bz, err := json.Marshal(aminoMsg)
+		bz, err := json.Marshal(protoToAminoJSON(msg))
 		if err != nil {
 			return nil, fmt.Errorf("marshalling aminoMsg: %v", err)
 		}
@@ -124,44 +121,6 @@ func getBytesToSign(tx Tx, chainID string, account, sequence uint64) ([]byte, er
 	return mustSortJSON(bz), nil
 }
 
-// TODO improve
-func aminoMapping(m map[string]any) (map[string]any, error) {
-	if protoType, ok := m["@type"].(string); ok {
-		aminoType, ok := protoToAminoTypeMap[protoType]
-		if !ok {
-			return nil, fmt.Errorf("Can't find amino mapping for proto @type=%q", protoType)
-		}
-		aminoValue := make(map[string]any)
-		for k, v := range m {
-			if k != "@type" {
-				if mm, ok := v.(map[string]any); ok {
-					var err error
-					aminoValue[k], err = aminoMapping(mm)
-					if err != nil {
-						return nil, err
-					}
-				} else {
-					aminoValue[k] = v
-				}
-			}
-		}
-		return map[string]any{
-			"type":  aminoType,
-			"value": aminoValue,
-		}, nil
-	}
-	for k, v := range m {
-		if mm, ok := v.(map[string]any); ok {
-			var err error
-			m[k], err = aminoMapping(mm)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	return m, nil
-}
-
 // WTH is that
 func mustSortJSON(bz []byte) []byte {
 	var c any
@@ -174,6 +133,28 @@ func mustSortJSON(bz []byte) []byte {
 		panic(err)
 	}
 	return js
+}
+
+// protoToAminoJSON turns proto json to amino json.
+func protoToAminoJSON(m map[string]any) map[string]any {
+	if protoType, ok := m["@type"]; ok {
+		aminoType, ok := protoToAminoTypeMap[protoType.(string)]
+		if !ok {
+			panic(fmt.Sprintf("can't find amino mapping for proto @type=%q", protoType))
+		}
+		m := maps.Clone(m)
+		delete(m, "@type")
+		return map[string]any{
+			"type":  aminoType,
+			"value": protoToAminoJSON(m),
+		}
+	}
+	for k, v := range m {
+		if mm, ok := v.(map[string]any); ok {
+			m[k] = protoToAminoJSON(mm)
+		}
+	}
+	return m
 }
 
 type Tx struct {
