@@ -35,7 +35,6 @@ func signTxCmd() *ffcli.Command {
 	chainID := fs.String("chain-id", "", "Chain identifier")
 	account := fs.Uint64("account", 0, "Account number")
 	sequence := fs.Uint64("sequence", 0, "Sequence number")
-	bytesToSignFile := fs.String("bytes-to-sign-file", "", "Path to file that contains the bytes to sign in base64 std format")
 	return &ffcli.Command{
 		Name:       "sign-tx",
 		ShortUsage: "legacykey sign-tx --from <key> --keyring-dir <dir> --chain-id <chainID> --sequence <sequence> --account <account> <tx.json>",
@@ -58,18 +57,9 @@ func signTxCmd() *ffcli.Command {
 			if err != nil {
 				return err
 			}
-			var bytesToSign string
-			if *bytesToSignFile != "" {
-				bz, err := os.ReadFile(*bytesToSignFile)
-				if err != nil {
-					return err
-				}
-				// TODO test with direct sign mode
-				bytesToSign = string(bz)
-			}
 
 			// TODO test with ledger
-			signedTx, err := signTx(tx, kr, *signer, *chainID, *account, *sequence, bytesToSign)
+			signedTx, err := signTx(tx, kr, *signer, *chainID, *account, *sequence)
 			if err != nil {
 				return err
 			}

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -17,19 +16,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 )
 
-func signTx(tx Tx, kr keyring.Keyring, signer, chainID string, account, sequence uint64, bytesToSignBase64 string) (Tx, error) {
+func signTx(tx Tx, kr keyring.Keyring, signer, chainID string, account, sequence uint64) (Tx, error) {
 	key, err := kr.Get(signer + ".info")
 	if err != nil {
 		return Tx{}, err
 	}
-	var bytesToSign []byte
-	if bytesToSignBase64 != "" {
-		// Get bytesTosign from parameter
-		bytesToSign, err = base64.StdEncoding.DecodeString(bytesToSignBase64)
-	} else {
-		// Get bytesToSign from tx
-		bytesToSign, err = getBytesToSign(tx, chainID, account, sequence)
-	}
+	// Get bytesToSign from tx
+	bytesToSign, err := getBytesToSign(tx, chainID, account, sequence)
 	if err != nil {
 		return Tx{}, err
 	}

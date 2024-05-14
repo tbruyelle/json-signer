@@ -241,7 +241,6 @@ func TestSignTx(t *testing.T) {
 		name                string
 		keyname             string
 		tx                  Tx
-		bytesToSign         string
 		expectedSignerInfos []SignerInfo
 		expectedSignatures  []string
 	}{
@@ -265,34 +264,13 @@ func TestSignTx(t *testing.T) {
 				"NsA6KJYcBaMI9edMV4H0vKHDiOBzu4J2e3xQc0WuIqPt6O0UeJ0zsBcw4X+o+ZkiPsEZ5kOVF8AzC4O4XHViDA==",
 			},
 		},
-		{
-			name:        "local key with bytes-to-sign",
-			keyname:     "local",
-			tx:          bankSendTx,
-			bytesToSign: "eyJhY2NvdW50X251bWJlciI6IjQyIiwiY2hhaW5faWQiOiJjaGFpbi1pZCIsImZlZSI6eyJhbW91bnQiOlt7ImFtb3VudCI6IjEwIiwiZGVub20iOiJ0b2tlbiJ9XSwiZ2FzIjoiMjAwMDAwIn0sIm1lbW8iOiJhIG1lbW8iLCJtc2dzIjpbeyJ0eXBlIjoiY29zbW9zLXNkay9Nc2dTZW5kIiwidmFsdWUiOnsiYW1vdW50IjpbeyJhbW91bnQiOiIxMDAwIiwiZGVub20iOiJ0b2tlbiJ9XSwiZnJvbV9hZGRyZXNzIjoiY29zbW9zMXNoenNxYWtkYWt6d2h2eTA1Y3ZqbHQ5YWN3ZjNoZmprc3kwaHQ1IiwidG9fYWRkcmVzcyI6ImNvc21vczE4bHU4azRuN25tcWh6MnozeTlhNXkzOWZ6Z2FwY2hmcTZtdmFlZyJ9fV0sInNlcXVlbmNlIjoiMSIsInRpbWVvdXRfaGVpZ2h0IjoiNDIifQ==",
-			expectedSignerInfos: []SignerInfo{{
-				PublicKey: map[string]any{
-					"@type": codectypes.MsgTypeURL(pubkey),
-					"key":   pubkey.Bytes(),
-				},
-				ModeInfo: ModeInfo{
-					Single: Single{
-						Mode: "SIGN_MODE_LEGACY_AMINO_JSON",
-					},
-				},
-				Sequence: "1",
-			}},
-			expectedSignatures: []string{
-				"NsA6KJYcBaMI9edMV4H0vKHDiOBzu4J2e3xQc0WuIqPt6O0UeJ0zsBcw4X+o+ZkiPsEZ5kOVF8AzC4O4XHViDA==",
-			},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 			assert := assert.New(t)
 
-			signedTx, err := signTx(tt.tx, kr, tt.keyname, "chain-id", 42, 1, tt.bytesToSign)
+			signedTx, err := signTx(tt.tx, kr, tt.keyname, "chain-id", 42, 1)
 
 			require.NoError(err)
 			assert.Equal(tt.expectedSignerInfos, signedTx.AuthInfo.SignerInfos)
