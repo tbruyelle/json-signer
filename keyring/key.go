@@ -18,18 +18,35 @@ type Key struct {
 	Info cosmoskeyring.LegacyInfo
 }
 
-func (k Key) GetPubKey() (cryptotypes.PubKey, error) {
+func (k Key) Sign(bz []byte) ([]byte, cryptotypes.PubKey, error) {
 	if k.IsAmino() {
-		return k.Info.GetPubKey(), nil
+		switch k.Info.GetType() {
+		case cosmoskeyring.TypeLocal:
+			privKey, err := privKeyFromInfo(k.Info)
+			if err != nil {
+				return nil, nil, err
+			}
+			signature, err := privKey.Sign(bz)
+			if err != nil {
+				return nil, nil, err
+			}
+			return signature, privKey.PubKey(), nil
+		}
+		return nil, nil, fmt.Errorf("unhandled key type %q", k.Info.GetType())
 	}
-	return k.Record.GetPubKey()
-}
-
-func (k Key) GetPrivKey() (cryptotypes.PrivKey, error) {
-	if k.IsAmino() {
-		return privKeyFromInfo(k.Info)
+	switch k.Record.GetType() {
+	case cosmoskeyring.TypeLocal:
+		privKey, err := privKeyFromRecord(k.Record)
+		if err != nil {
+			return nil, nil, err
+		}
+		signature, err := privKey.Sign(bz)
+		if err != nil {
+			return nil, nil, err
+		}
+		return signature, privKey.PubKey(), nil
 	}
-	return privKeyFromRecord(k.Record)
+	return nil, nil, fmt.Errorf("unhandled key type %q", k.Record.GetType())
 }
 
 func (k Key) IsAmino() bool {

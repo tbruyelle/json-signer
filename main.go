@@ -68,6 +68,7 @@ func signTxCmd() *ffcli.Command {
 				bytesToSign = string(bz)
 			}
 
+			// TODO test with ledger
 			signedTx, err := signTx(tx, kr, *signer, *chainID, *account, *sequence, bytesToSign)
 			if err != nil {
 				return err
