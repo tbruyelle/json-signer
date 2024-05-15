@@ -35,17 +35,17 @@ func (kr Keyring) MigrateProtoKeysToAmino() error {
 	for _, key := range keys {
 		if key.IsAmino() {
 			// this is a amino-encoded key  no migration just display
-			fmt.Printf("%q (amino encoded)-> %s\n", key.Name, spew.Sdump(key.Info))
+			fmt.Printf("%q (amino encoded)-> %s\n", key.name, spew.Sdump(key.info))
 			continue
 		}
 		// this is a proto-encoded key let's migrate it back to amino
-		fmt.Printf("%q (proto encoded)-> %s\n", key.Name, spew.Sdump(key.Record))
+		fmt.Printf("%q (proto encoded)-> %s\n", key.name, spew.Sdump(key.record))
 		info, err := key.RecordToInfo()
 		if err != nil {
 			return err
 		}
 		// Register new amino key_name.info -> amino encoded LegacyInfo
-		if err := aminoKr.AddAmino(key.Name, info); err != nil {
+		if err := aminoKr.AddAmino(key.name, info); err != nil {
 			return err
 		}
 		fmt.Printf("%q re-encoded to amino keyring %q\n", key, aminoKeyringDir)

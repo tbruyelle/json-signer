@@ -17,59 +17,47 @@ import (
 )
 
 type Key struct {
-	Name string
-	// Record is not nil if the key is proto-encoded
-	Record *cosmoskeyring.Record
-	// Info is not nil if the key is amino-encoded
-	Info cosmoskeyring.LegacyInfo
+	name string
+	// record is not nil if the key is proto-encoded
+	record *cosmoskeyring.Record
+	// info is not nil if the key is amino-encoded
+	info cosmoskeyring.LegacyInfo
 }
 
 func discoverLedger() (*ledger.LedgerCosmos, error) {
 	return ledger.FindLedgerCosmosUserApp()
 }
 
-func (k Key) Sign(bz []byte) ([]byte, cryptotypes.PubKey, error) {
-	if k.IsAmino() {
-		switch k.Info.GetType() {
-		case cosmoskeyring.TypeLocal:
-			privKey, err := privKeyFromInfo(k.Info)
-			if err != nil {
-				return nil, nil, err
-			}
-			signature, err := privKey.Sign(bz)
-			if err != nil {
-				return nil, nil, err
-			}
-			return signature, privKey.PubKey(), nil
+func (k Key) Name() string {
+	return k.name
+}
 
-		case cosmoskeyring.TypeLedger:
-			device, err := discoverLedger()
-			if err != nil {
-				return nil, nil, err
-			}
-			path, err := k.Info.GetPath()
-			if err != nil {
-				return nil, nil, err
-			}
-			pubKey, err := getLedgerPubKey(device, path.DerivationPath())
-			if err != nil {
-				return nil, nil, err
-			}
-			signature, err := device.SignSECP256K1(path.DerivationPath(), bz, 0)
-			if err != nil {
-				return nil, nil, err
-			}
-			signature, err = convertDERtoBER(signature)
-			if err != nil {
-				return nil, nil, err
-			}
-			return signature, pubKey, nil
-		}
-		return nil, nil, fmt.Errorf("unhandled key type %q", k.Info.GetType())
+func (k Key) GetType() cosmoskeyring.KeyType {
+	if k.IsAmino() {
+		return k.info.GetType()
 	}
-	switch k.Record.GetType() {
+	return k.record.GetType()
+}
+
+func (k Key) GetBip44Path() (*hd.BIP44Params, error) {
+	if k.IsAmino() {
+		return k.info.GetPath()
+	}
+	return k.record.GetLedger().GetPath(), nil
+}
+
+func (k Key) Sign(bz []byte) ([]byte, cryptotypes.PubKey, error) {
+	switch k.GetType() {
 	case cosmoskeyring.TypeLocal:
-		privKey, err := privKeyFromRecord(k.Record)
+		var (
+			privKey cryptotypes.PrivKey
+			err     error
+		)
+		if k.IsAmino() {
+			privKey, err = privKeyFromInfo(k.info)
+		} else {
+			privKey, err = privKeyFromRecord(k.record)
+		}
 		if err != nil {
 			return nil, nil, err
 		}
@@ -78,8 +66,31 @@ func (k Key) Sign(bz []byte) ([]byte, cryptotypes.PubKey, error) {
 			return nil, nil, err
 		}
 		return signature, privKey.PubKey(), nil
+
+	case cosmoskeyring.TypeLedger:
+		device, err := discoverLedger()
+		if err != nil {
+			return nil, nil, err
+		}
+		path, err := k.GetBip44Path()
+		if err != nil {
+			return nil, nil, err
+		}
+		pubKey, err := getLedgerPubKey(device, path.DerivationPath())
+		if err != nil {
+			return nil, nil, err
+		}
+		signature, err := device.SignSECP256K1(path.DerivationPath(), bz, 0)
+		if err != nil {
+			return nil, nil, err
+		}
+		signature, err = convertDERtoBER(signature)
+		if err != nil {
+			return nil, nil, err
+		}
+		return signature, pubKey, nil
 	}
-	return nil, nil, fmt.Errorf("unhandled key type %q", k.Record.GetType())
+	return nil, nil, fmt.Errorf("unhandled key type %q", k.GetType())
 }
 
 func getLedgerPubKey(device *ledger.LedgerCosmos, bip32Path []uint32) (cryptotypes.PubKey, error) {
@@ -128,11 +139,11 @@ func convertDERtoBER(signatureDER []byte) ([]byte, error) {
 }
 
 func (k Key) IsAmino() bool {
-	return k.Info != nil
+	return k.info != nil
 }
 
 func (k Key) RecordToInfo() (cosmoskeyring.LegacyInfo, error) {
-	return legacyInfoFromRecord(k.Record)
+	return legacyInfoFromRecord(k.record)
 }
 
 func extractPrivKeyFromLocal(rl *cosmoskeyring.Record_Local) (cryptotypes.PrivKey, error) {

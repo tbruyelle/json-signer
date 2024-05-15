@@ -72,13 +72,13 @@ func (k Keyring) Get(name string) (Key, error) {
 	var record cosmoskeyring.Record
 	errProto := codec.Proto.Unmarshal(item.Data, &record)
 	if errProto == nil {
-		return Key{Name: name, Record: &record}, nil
+		return Key{name: name, record: &record}, nil
 	}
 	// try amino decode
 	var info cosmoskeyring.LegacyInfo
 	errAmino := codec.Amino.UnmarshalLengthPrefixed(item.Data, &info)
 	if errAmino == nil {
-		return Key{Name: name, Info: info}, nil
+		return Key{name: name, info: info}, nil
 	}
 	return Key{}, fmt.Errorf("cannot decode key %s: decodeProto=%v decodeAmino=%v", name, errProto, errAmino)
 }
