@@ -7,6 +7,20 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
+// MigrateProtoKeysToAmino turns all proto encoded keys from kr and migrate
+// them to amino format, in a new keyring located in kr.dir/amino.
+//
+// This function is useful when by mistake you read a keyring that used to be
+// amino-encoded with a binary that depends on cosmos-sdk >=v0.46, because it
+// automatically migrates all amino keys into proto keys.
+//
+// Unlike cosmos-sdk, this migration is not destructive and is done in a
+// separate keyring. Once migrated you can check that everything has been
+// properly migrated by listing the keys from kr.dir/amino. Once you are OK
+// with the result, you can simply copy the *.info files from kr.dir/amino
+// into kr.dir, assuming that you used the same password for both keyring.
+//
+// TODO create kr.dir/amino/keyhash file
 func (kr Keyring) MigrateProtoKeysToAmino() error {
 	// new keyring for migrated keys
 	aminoKeyringDir := filepath.Join(kr.dir, "amino")
@@ -34,7 +48,6 @@ func (kr Keyring) MigrateProtoKeysToAmino() error {
 		if err := aminoKr.AddAmino(key.Name, info); err != nil {
 			return err
 		}
-		// TODO create keyring-dir/keyhash file
 		fmt.Printf("%q re-encoded to amino keyring %q\n", key, aminoKeyringDir)
 	}
 	return nil
