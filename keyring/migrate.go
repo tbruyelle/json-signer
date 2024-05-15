@@ -1,21 +1,16 @@
-package main
+package keyring
 
 import (
 	"fmt"
 	"path/filepath"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/tbruyelle/legacykey/keyring"
 )
 
-func migrateKeys(keyringDir string) error {
-	kr, err := keyring.New(keyringDir, nil)
-	if err != nil {
-		return err
-	}
+func (kr Keyring) MigrateProtoKeysToAmino() error {
 	// new keyring for migrated keys
-	aminoKeyringDir := filepath.Join(keyringDir, "amino")
-	aminoKr, err := keyring.New(aminoKeyringDir, nil)
+	aminoKeyringDir := filepath.Join(kr.dir, "amino")
+	aminoKr, err := New(aminoKeyringDir, nil)
 	if err != nil {
 		return err
 	}

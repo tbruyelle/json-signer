@@ -255,7 +255,7 @@ func TestSignTx(t *testing.T) {
 				},
 				ModeInfo: ModeInfo{
 					Single: Single{
-						Mode: "SIGN_MODE_LEGACY_AMINO_JSON",
+						Mode: signModeAminoJSON,
 					},
 				},
 				Sequence: "1",

@@ -14,7 +14,8 @@ import (
 )
 
 type Keyring struct {
-	k keyring.Keyring
+	dir string
+	k   keyring.Keyring
 }
 
 func New(keyringDir string, filePasswordFunc func(string) (string, error)) (Keyring, error) {
@@ -31,7 +32,7 @@ func New(keyringDir string, filePasswordFunc func(string) (string, error)) (Keyr
 	if err != nil {
 		return Keyring{}, err
 	}
-	return Keyring{k: k}, nil
+	return Keyring{dir: keyringDir, k: k}, nil
 }
 
 func (k Keyring) Keys() ([]Key, error) {

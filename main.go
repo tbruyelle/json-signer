@@ -100,7 +100,11 @@ func migrateKeysCmd() *ffcli.Command {
 			if fs.NArg() != 1 {
 				return flag.ErrHelp
 			}
-			return migrateKeys(fs.Arg(0))
+			kr, err := keyring.New(fs.Arg(0), nil)
+			if err != nil {
+				return err
+			}
+			return kr.MigrateProtoKeysToAmino()
 		},
 	}
 }

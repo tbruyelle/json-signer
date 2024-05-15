@@ -16,6 +16,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 )
 
+const signModeAminoJSON = "SIGN_MODE_LEGACY_AMINO_JSON"
+
 func signTx(tx Tx, kr keyring.Keyring, signer, chainID string, account, sequence uint64) (Tx, error) {
 	key, err := kr.Get(signer + ".info")
 	if err != nil {
@@ -43,7 +45,7 @@ func signTx(tx Tx, kr keyring.Keyring, signer, chainID string, account, sequence
 		},
 		ModeInfo: ModeInfo{
 			Single: Single{
-				Mode: "SIGN_MODE_LEGACY_AMINO_JSON",
+				Mode: signModeAminoJSON,
 			},
 		},
 		Sequence: fmt.Sprint(sequence),
@@ -51,6 +53,7 @@ func signTx(tx Tx, kr keyring.Keyring, signer, chainID string, account, sequence
 	return tx, nil
 }
 
+// XXX: use a function to automatically turns proto @type to amino type?
 var protoToAminoTypeMap = map[string]string{
 	"/cosmos.bank.v1beta1.MsgSend":          "cosmos-sdk/MsgSend",
 	"/govgen.gov.v1beta1.MsgSubmitProposal": "cosmos-sdk/MsgSubmitProposal",
