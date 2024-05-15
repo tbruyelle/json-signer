@@ -32,6 +32,14 @@ func (k Key) Name() string {
 	return k.name
 }
 
+func (k Key) IsAmino() bool {
+	return k.info != nil
+}
+
+func (k Key) RecordToInfo() (cosmoskeyring.LegacyInfo, error) {
+	return legacyInfoFromRecord(k.record)
+}
+
 func (k Key) GetType() cosmoskeyring.KeyType {
 	if k.IsAmino() {
 		return k.info.GetType()
@@ -39,25 +47,10 @@ func (k Key) GetType() cosmoskeyring.KeyType {
 	return k.record.GetType()
 }
 
-func (k Key) GetBip44Path() (*hd.BIP44Params, error) {
-	if k.IsAmino() {
-		return k.info.GetPath()
-	}
-	return k.record.GetLedger().GetPath(), nil
-}
-
 func (k Key) Sign(bz []byte) ([]byte, cryptotypes.PubKey, error) {
 	switch k.GetType() {
 	case cosmoskeyring.TypeLocal:
-		var (
-			privKey cryptotypes.PrivKey
-			err     error
-		)
-		if k.IsAmino() {
-			privKey, err = privKeyFromInfo(k.info)
-		} else {
-			privKey, err = privKeyFromRecord(k.record)
-		}
+		privKey, err := k.getPrivKey()
 		if err != nil {
 			return nil, nil, err
 		}
@@ -72,7 +65,7 @@ func (k Key) Sign(bz []byte) ([]byte, cryptotypes.PubKey, error) {
 		if err != nil {
 			return nil, nil, err
 		}
-		path, err := k.GetBip44Path()
+		path, err := k.getBip44Path()
 		if err != nil {
 			return nil, nil, err
 		}
@@ -91,6 +84,30 @@ func (k Key) Sign(bz []byte) ([]byte, cryptotypes.PubKey, error) {
 		return signature, pubKey, nil
 	}
 	return nil, nil, fmt.Errorf("unhandled key type %q", k.GetType())
+}
+
+func (k Key) getBip44Path() (*hd.BIP44Params, error) {
+	if k.IsAmino() {
+		return k.info.GetPath()
+	}
+	return k.record.GetLedger().GetPath(), nil
+}
+
+func (k Key) getPrivKey() (cryptotypes.PrivKey, error) {
+	if k.GetType() != cosmoskeyring.TypeLocal {
+		return nil, fmt.Errorf("Access to priv key is only for local key type")
+	}
+	if k.IsAmino() {
+		// Get priv key from amino encoded key
+		var privKey cryptotypes.PrivKey
+		err := codec.Amino.Unmarshal([]byte(k.info.(legacyLocalInfo).GetPrivKeyArmor()), &privKey)
+		if err != nil {
+			return nil, err
+		}
+		return privKey, nil
+	}
+	// Get priv key from proto encoded key
+	return extractPrivKeyFromLocal(k.record.GetLocal())
 }
 
 func getLedgerPubKey(device *ledger.LedgerCosmos, bip32Path []uint32) (cryptotypes.PubKey, error) {
@@ -138,14 +155,6 @@ func convertDERtoBER(signatureDER []byte) ([]byte, error) {
 	return sigBytes, nil
 }
 
-func (k Key) IsAmino() bool {
-	return k.info != nil
-}
-
-func (k Key) RecordToInfo() (cosmoskeyring.LegacyInfo, error) {
-	return legacyInfoFromRecord(k.record)
-}
-
 func extractPrivKeyFromLocal(rl *cosmoskeyring.Record_Local) (cryptotypes.PrivKey, error) {
 	if rl.PrivKey == nil {
 		return nil, cosmoskeyring.ErrPrivKeyNotAvailable
@@ -157,23 +166,6 @@ func extractPrivKeyFromLocal(rl *cosmoskeyring.Record_Local) (cryptotypes.PrivKe
 	}
 
 	return priv, nil
-}
-
-func privKeyFromRecord(record *cosmoskeyring.Record) (cryptotypes.PrivKey, error) {
-	switch record.GetType() {
-	case cosmoskeyring.TypeLocal:
-		return extractPrivKeyFromLocal(record.GetLocal())
-	}
-	return nil, fmt.Errorf("unhandled Record type %q", record.GetType())
-}
-
-func privKeyFromInfo(info cosmoskeyring.LegacyInfo) (privKey cryptotypes.PrivKey, err error) {
-	switch info.GetType() {
-	case cosmoskeyring.TypeLocal:
-		err = codec.Amino.Unmarshal([]byte(info.(legacyLocalInfo).GetPrivKeyArmor()), &privKey)
-		return
-	}
-	return nil, fmt.Errorf("unhandled Info type %q", info.GetType())
 }
 
 // legacyInfoFromLegacyInfo turns a Record into a LegacyInfo.
