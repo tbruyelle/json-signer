@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/tbruyelle/legacykey/codec"
-	"github.com/tbruyelle/legacykey/keyring"
+	"github.com/tbruyelle/amino-signer/codec"
+	"github.com/tbruyelle/amino-signer/keyring"
 	"golang.org/x/exp/maps"
 
 	"cosmossdk.io/math"

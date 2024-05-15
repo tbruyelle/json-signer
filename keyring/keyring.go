@@ -8,7 +8,7 @@ import (
 
 	"github.com/99designs/keyring"
 	"github.com/bgentry/speakeasy"
-	"github.com/tbruyelle/legacykey/codec"
+	"github.com/tbruyelle/amino-signer/codec"
 
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 )

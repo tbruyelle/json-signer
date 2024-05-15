@@ -1,4 +1,4 @@
-module github.com/tbruyelle/legacykey
+module github.com/tbruyelle/amino-signer
 
 go 1.22.2
 

@@ -5,7 +5,7 @@ package keyring
 import (
 	"fmt"
 
-	"github.com/tbruyelle/legacykey/codec"
+	"github.com/tbruyelle/amino-signer/codec"
 
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"

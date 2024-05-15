@@ -9,12 +9,12 @@ import (
 	"os"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
-	"github.com/tbruyelle/legacykey/keyring"
+	"github.com/tbruyelle/amino-signer/keyring"
 )
 
 func main() {
 	rootCmd := &ffcli.Command{
-		ShortUsage: "legacykey <subcommand>",
+		ShortUsage: "amino-signer <subcommand>",
 		Subcommands: []*ffcli.Command{
 			migrateKeysCmd(), signTxCmd(),
 		},
@@ -37,7 +37,7 @@ func signTxCmd() *ffcli.Command {
 	sequence := fs.Uint64("sequence", 0, "Sequence number")
 	return &ffcli.Command{
 		Name:       "sign-tx",
-		ShortUsage: "legacykey sign-tx --from <key> --keyring-dir <dir> --chain-id <chainID> --sequence <sequence> --account <account> <tx.json>",
+		ShortUsage: "amino-signer sign-tx --from <key> --keyring-dir <dir> --chain-id <chainID> --sequence <sequence> --account <account> <tx.json>",
 		ShortHelp:  "Sign transaction",
 		FlagSet:    fs,
 		Exec: func(ctx context.Context, args []string) error {
@@ -92,7 +92,7 @@ func migrateKeysCmd() *ffcli.Command {
 	fs := flag.NewFlagSet("migrate-keys", flag.ContinueOnError)
 	return &ffcli.Command{
 		Name:       "migrate-keys",
-		ShortUsage: "legacykey migrate-keys <keyring_path>",
+		ShortUsage: "amino-signer migrate-keys <keyring_path>",
 		ShortHelp:  "Migrate keys from proto to amino",
 		FlagSet:    fs,
 		Exec: func(ctx context.Context, args []string) error {
