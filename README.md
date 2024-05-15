@@ -89,7 +89,7 @@ Extracted bytes-to-sign:
 ## Keyring
 
 `amino-signer` also uses a alternate keyring package that is able to read a
-keyring (only file backend for now), whether it has been created with a
+keyring (only file backend for now), whether it was been created with a
 cosmos-sdk application version <0.46 (amino encoded key), or with version >=0.46
 (proto encoded key). And of course it doesn't automatically migrate amino
-encoded keys to proto keys, like cosmos-sdk applications >=0.46 are doing.
+encoded keys to proto keys like cosmos-sdk applications >=0.46 does.
