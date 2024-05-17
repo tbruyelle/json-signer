@@ -12,9 +12,9 @@ offline computer.
 
 
 In this example, there is an online computer and an offline computer. For
-security reasons, the online computer's keyring only contains  a "offline" key
-(only the public key), while the offline computer's keyring contains the
-private key.
+security reasons, only the offline computer contains the private key. The
+online computer could contain an offline version of this key (which contains
+only the public key), but that's not mandatory to generate transactions.
 
 Let us create a transaction using the `gaiad` binary on an online computer:
 
