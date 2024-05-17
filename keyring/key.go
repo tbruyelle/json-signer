@@ -24,7 +24,7 @@ func (k Key) Name() string {
 	return k.name
 }
 
-func (k Key) IsAmino() bool {
+func (k Key) IsAminoEncoded() bool {
 	return k.info != nil
 }
 
@@ -33,7 +33,7 @@ func (k Key) RecordToInfo() (cosmoskeyring.LegacyInfo, error) {
 }
 
 func (k Key) GetType() cosmoskeyring.KeyType {
-	if k.IsAmino() {
+	if k.IsAminoEncoded() {
 		return k.info.GetType()
 	}
 	return k.record.GetType()
@@ -63,7 +63,7 @@ func (k Key) Sign(bz []byte) ([]byte, cryptotypes.PubKey, error) {
 }
 
 func (k Key) getBip44Path() (*hd.BIP44Params, error) {
-	if k.IsAmino() {
+	if k.IsAminoEncoded() {
 		return k.info.GetPath()
 	}
 	return k.record.GetLedger().GetPath(), nil
@@ -73,7 +73,7 @@ func (k Key) getPrivKey() (cryptotypes.PrivKey, error) {
 	if k.GetType() != cosmoskeyring.TypeLocal {
 		return nil, fmt.Errorf("Access to priv key is only for local key type")
 	}
-	if k.IsAmino() {
+	if k.IsAminoEncoded() {
 		// Get priv key from amino encoded key
 		var privKey cryptotypes.PrivKey
 		err := codec.Amino.Unmarshal([]byte(k.info.(legacyLocalInfo).GetPrivKeyArmor()), &privKey)

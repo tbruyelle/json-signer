@@ -33,7 +33,7 @@ func (kr Keyring) MigrateProtoKeysToAmino() error {
 		return err
 	}
 	for _, key := range keys {
-		if key.IsAmino() {
+		if key.IsAminoEncoded() {
 			// this is a amino-encoded key  no migration just display
 			fmt.Printf("%q (amino encoded)-> %s\n", key.name, spew.Sdump(key.info))
 			continue

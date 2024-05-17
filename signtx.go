@@ -28,7 +28,8 @@ func signTx(tx Tx, kr keyring.Keyring, signer, chainID string, account, sequence
 	if err != nil {
 		return Tx{}, err
 	}
-	fmt.Println("BYTESTOSIGN", string(bytesToSign))
+	// TODO present the bytes to sign and prompt for signing
+	// fmt.Println("BYTESTOSIGN", string(bytesToSign))
 
 	// Sign those bytes
 	signature, pubKey, err := key.Sign(bytesToSign)

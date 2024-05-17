@@ -25,6 +25,7 @@ func New(keyringDir string, filePasswordFunc func(string) (string, error)) (Keyr
 		}
 	}
 	k, err := keyring.Open(keyring.Config{
+		// TODO: test with other backend
 		AllowedBackends:  []keyring.BackendType{keyring.FileBackend},
 		FileDir:          keyringDir,
 		FilePasswordFunc: filePasswordFunc,
