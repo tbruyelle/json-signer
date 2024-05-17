@@ -3,7 +3,7 @@ package keyring
 import (
 	"fmt"
 
-	"github.com/tbruyelle/amino-signer/codec"
+	"github.com/tbruyelle/json-signer/codec"
 
 	ledger "github.com/cosmos/ledger-cosmos-go"
 

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/tbruyelle/amino-signer/codec"
-	"github.com/tbruyelle/amino-signer/keyring"
+	"github.com/tbruyelle/json-signer/codec"
+	"github.com/tbruyelle/json-signer/keyring"
 	"golang.org/x/exp/maps"
 
 	"cosmossdk.io/math"
@@ -28,7 +28,7 @@ func signTx(tx Tx, kr keyring.Keyring, signer, chainID string, account, sequence
 	if err != nil {
 		return Tx{}, err
 	}
-	// fmt.Println("BYTESTOSIGN", string(bytesToSign))
+	fmt.Println("BYTESTOSIGN", string(bytesToSign))
 
 	// Sign those bytes
 	signature, pubKey, err := key.Sign(bytesToSign)
@@ -56,6 +56,8 @@ func signTx(tx Tx, kr keyring.Keyring, signer, chainID string, account, sequence
 // XXX: use a function to automatically turns proto @type to amino type?
 var protoToAminoTypeMap = map[string]string{
 	"/cosmos.bank.v1beta1.MsgSend":          "cosmos-sdk/MsgSend",
+	"/cosmos.gov.v1beta1.MsgSubmitProposal": "cosmos-sdk/MsgSubmitProposal",
+	"/cosmos.gov.v1beta1.TextProposal":      "cosmos-sdk/TextProposal",
 	"/govgen.gov.v1beta1.MsgSubmitProposal": "cosmos-sdk/MsgSubmitProposal",
 	"/govgen.gov.v1beta1.TextProposal":      "cosmos-sdk/TextProposal",
 }

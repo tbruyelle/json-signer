@@ -1,4 +1,4 @@
-module github.com/tbruyelle/amino-signer
+module github.com/tbruyelle/json-signer
 
 go 1.22.2
 

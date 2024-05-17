@@ -9,13 +9,14 @@ import (
 	"os"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
-	"github.com/tbruyelle/amino-signer/keyring"
+	"github.com/tbruyelle/json-signer/keyring"
 )
 
 func main() {
 	rootCmd := &ffcli.Command{
-		ShortUsage: "amino-signer <subcommand>",
+		ShortUsage: "json-signer <subcommand>",
 		Subcommands: []*ffcli.Command{
+			// TODO add key-list command
 			migrateKeysCmd(), signTxCmd(),
 		},
 		Exec: func(ctx context.Context, args []string) error {
@@ -37,7 +38,7 @@ func signTxCmd() *ffcli.Command {
 	sequence := fs.Uint64("sequence", 0, "Sequence number")
 	return &ffcli.Command{
 		Name:       "sign-tx",
-		ShortUsage: "amino-signer sign-tx --from <key> --keyring-dir <dir> --chain-id <chainID> --sequence <sequence> --account <account> <tx.json>",
+		ShortUsage: "json-signer sign-tx --from <key> --keyring-dir <dir> --chain-id <chainID> --sequence <sequence> --account <account> <tx.json>",
 		ShortHelp:  "Sign transaction",
 		FlagSet:    fs,
 		Exec: func(ctx context.Context, args []string) error {
@@ -92,7 +93,7 @@ func migrateKeysCmd() *ffcli.Command {
 	fs := flag.NewFlagSet("migrate-keys", flag.ContinueOnError)
 	return &ffcli.Command{
 		Name:       "migrate-keys",
-		ShortUsage: "amino-signer migrate-keys <keyring_path>",
+		ShortUsage: "json-signer migrate-keys <keyring_path>",
 		ShortHelp:  "Migrate keys from proto to amino",
 		FlagSet:    fs,
 		Exec: func(ctx context.Context, args []string) error {
