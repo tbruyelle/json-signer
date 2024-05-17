@@ -62,6 +62,8 @@ var protoToAminoTypeMap = map[string]string{
 	"/govgen.gov.v1beta1.TextProposal":      "cosmos-sdk/TextProposal",
 }
 
+// getBytesToSign creates the SignDoc from tx, and serializes it using the
+// amino-json format.
 func getBytesToSign(tx Tx, chainID string, account, sequence uint64) ([]byte, error) {
 	fee := tx.AuthInfo.Fee
 	gas, err := strconv.ParseUint(fee.GasLimit, 10, 64)
@@ -82,11 +84,13 @@ func getBytesToSign(tx Tx, chainID string, account, sequence uint64) ([]byte, er
 	}
 	msgsBytes := make([]json.RawMessage, 0, len(tx.Body.Messages))
 	for _, msg := range tx.Body.Messages {
+		// This is the weak part of the program, where proto-json format from msg
+		// is transformed into the amino-json format.
 		bz, err := json.Marshal(protoToAminoJSON(msg))
 		if err != nil {
 			return nil, fmt.Errorf("marshalling aminoMsg: %v", err)
 		}
-		msgsBytes = append(msgsBytes, bz)
+		msgsBytes = append(msgsBytes, mustSortJSON(bz))
 	}
 	feeBytes, err := codec.Amino.MarshalJSON(stdFee)
 	if err != nil {
@@ -109,12 +113,10 @@ func getBytesToSign(tx Tx, chainID string, account, sequence uint64) ([]byte, er
 	if err != nil {
 		return nil, err
 	}
-	// TODO ensure this is really required, maybe we can just use the stdlib
-	// json encoder
 	return mustSortJSON(bz), nil
 }
 
-// WTH is that
+// mustSortJSON ensures JSON canonicalization (at least for field ordering).
 func mustSortJSON(bz []byte) []byte {
 	var c any
 	err := json.Unmarshal(bz, &c)
@@ -129,6 +131,8 @@ func mustSortJSON(bz []byte) []byte {
 }
 
 // protoToAminoJSON turns proto json to amino json.
+// It works by mapping the proto `@type` into amino `type`, and then
+// encapsulate the other fields in a amino `value` field.
 func protoToAminoJSON(m map[string]any) map[string]any {
 	if protoType, ok := m["@type"]; ok {
 		aminoType, ok := protoToAminoTypeMap[protoType.(string)]
