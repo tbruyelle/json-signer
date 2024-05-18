@@ -16,8 +16,7 @@ func main() {
 	rootCmd := &ffcli.Command{
 		ShortUsage: "json-signer <subcommand>",
 		Subcommands: []*ffcli.Command{
-			// TODO add key-list command
-			migrateKeysCmd(), signTxCmd(),
+			listKeysCmd(), migrateKeysCmd(), signTxCmd(),
 		},
 		Exec: func(ctx context.Context, args []string) error {
 			return flag.ErrHelp
@@ -29,9 +28,43 @@ func main() {
 	}
 }
 
+func listKeysCmd() *ffcli.Command {
+	fs := flag.NewFlagSet("list-keys", flag.ContinueOnError)
+	keyringDir := fs.String("keyring-dir", "", "Keyring directory")
+	keyringBackend := fs.String("keyring-backend", "", "Keyring backend, which can be one of 'keychain' (macos), 'pass', 'kwallet' (linux), or 'file'")
+	return &ffcli.Command{
+		Name:       "list-keys",
+		ShortUsage: "json-signer list-keys --keyring-backend <keychain|pass|kwallet|file> --keyring-dir <dir>",
+		ShortHelp:  "List keys from keyring",
+		FlagSet:    fs,
+		Exec: func(ctx context.Context, args []string) error {
+			if err := fs.Parse(args); err != nil {
+				return err
+			}
+			kr, err := keyring.New(keyring.BackendType(*keyringBackend), *keyringDir, nil)
+			if err != nil {
+				return err
+			}
+			keys, err := kr.Keys()
+			if err != nil {
+				return err
+			}
+			if len(keys) == 0 {
+				fmt.Println("No keys found in keyring")
+				return nil
+			}
+			for i, key := range keys {
+				fmt.Printf("%d) %s type=%s pubkey=%s\n", i+1, key.Name(), key.GetType(), "TODO")
+			}
+			return nil
+		},
+	}
+}
+
 func signTxCmd() *ffcli.Command {
 	fs := flag.NewFlagSet("sign-tx", flag.ContinueOnError)
 	keyringDir := fs.String("keyring-dir", "", "Keyring directory")
+	keyringBackend := fs.String("keyring-backend", "", "Keyring backend, which can be one of 'keychain' (macos), 'pass', 'kwallet' (linux), or 'file'")
 	signer := fs.String("from", "", "Signer key name")
 	chainID := fs.String("chain-id", "", "Chain identifier")
 	account := fs.Uint64("account", 0, "Account number")
@@ -45,7 +78,9 @@ func signTxCmd() *ffcli.Command {
 			if err := fs.Parse(args); err != nil {
 				return err
 			}
-			if fs.NArg() != 1 || fs.Lookup("keyring-dir") == nil ||
+			if fs.NArg() != 1 ||
+				fs.Lookup("keyring-dir") == nil || // FIXME not mandatory for backend than file
+				fs.Lookup("keyring-backend") == nil ||
 				fs.Lookup("from") == nil || fs.Lookup("sequence") == nil ||
 				fs.Lookup("account") == nil || fs.Lookup("chain-id") == nil {
 				return flag.ErrHelp
@@ -54,7 +89,7 @@ func signTxCmd() *ffcli.Command {
 			if err != nil {
 				return err
 			}
-			kr, err := keyring.New(*keyringDir, nil)
+			kr, err := keyring.New(keyring.BackendType(*keyringBackend), *keyringDir, nil)
 			if err != nil {
 				return err
 			}
@@ -101,7 +136,7 @@ func migrateKeysCmd() *ffcli.Command {
 			if fs.NArg() != 1 {
 				return flag.ErrHelp
 			}
-			kr, err := keyring.New(fs.Arg(0), nil)
+			kr, err := keyring.New(keyring.BackendType("file"), fs.Arg(0), nil)
 			if err != nil {
 				return err
 			}

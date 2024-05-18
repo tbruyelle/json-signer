@@ -200,7 +200,7 @@ func TestGetBytesToSign(t *testing.T) {
 }
 
 func TestSignTx(t *testing.T) {
-	kr, err := keyring.New(t.TempDir(),
+	kr, err := keyring.New(keyring.BackendType("file"), t.TempDir(),
 		func(_ string) (string, error) { return "test", nil })
 	require.NoError(t, err)
 	// Generate a local private key

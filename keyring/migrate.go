@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/99designs/keyring"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -24,7 +25,7 @@ import (
 func (kr Keyring) MigrateProtoKeysToAmino() error {
 	// new keyring for migrated keys
 	aminoKeyringDir := filepath.Join(kr.dir, "amino")
-	aminoKr, err := New(aminoKeyringDir, nil)
+	aminoKr, err := New(keyring.FileBackend, aminoKeyringDir, nil)
 	if err != nil {
 		return err
 	}

@@ -18,22 +18,24 @@ type Keyring struct {
 	k   keyring.Keyring
 }
 
-func New(keyringDir string, filePasswordFunc func(string) (string, error)) (Keyring, error) {
+type BackendType = keyring.BackendType
+
+func New(backend BackendType, dir string, filePasswordFunc func(string) (string, error)) (Keyring, error) {
 	if filePasswordFunc == nil {
 		filePasswordFunc = func(_ string) (string, error) {
-			return speakeasy.FAsk(os.Stderr, fmt.Sprintf("Enter password for keyring %q: ", keyringDir))
+			return speakeasy.FAsk(os.Stderr, fmt.Sprintf("Enter password for keyring %q: ", dir))
 		}
 	}
 	k, err := keyring.Open(keyring.Config{
 		// TODO: test with other backend
-		AllowedBackends:  []keyring.BackendType{keyring.FileBackend},
-		FileDir:          keyringDir,
+		AllowedBackends:  []keyring.BackendType{backend},
+		FileDir:          dir,
 		FilePasswordFunc: filePasswordFunc,
 	})
 	if err != nil {
 		return Keyring{}, err
 	}
-	return Keyring{dir: keyringDir, k: k}, nil
+	return Keyring{dir: dir, k: k}, nil
 }
 
 func (k Keyring) Keys() ([]Key, error) {
