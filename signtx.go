@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/tbruyelle/json-signer/keyring"
+	"github.com/tbruyelle/keyring-compat"
 	"golang.org/x/exp/maps"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"

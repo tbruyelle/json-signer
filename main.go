@@ -9,7 +9,7 @@ import (
 	"os"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
-	"github.com/tbruyelle/json-signer/keyring"
+	"github.com/tbruyelle/keyring-compat"
 )
 
 func main() {
