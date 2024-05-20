@@ -41,6 +41,7 @@ func TestScripts(t *testing.T) {
 		*/
 		Cmds: map[string]func(ts *testscript.TestScript, neg bool, args []string){
 			"fillenvs": func(ts *testscript.TestScript, neg bool, args []string) {
+				// Fill $TEST1 with bech32 address
 				kr, err := keyring.New(
 					keyring.BackendType("file"),
 					filepath.Join(ts.Getenv("WORK"), "gaiad", "keyring-test"),

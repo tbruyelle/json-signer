@@ -74,15 +74,19 @@ func getBytesToSign(tx Tx, chainID, account, sequence string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	bz, err := json.Marshal(SignDoc{
+	signDoc := SignDoc{
 		AccountNumber: account,
 		ChainID:       chainID,
 		Fee:           json.RawMessage(feeBytes),
 		Memo:          tx.Body.Memo,
 		Msgs:          msgsBytes,
 		Sequence:      sequence,
-		TimeoutHeight: tx.Body.TimeoutHeight,
-	})
+	}
+	if tx.Body.TimeoutHeight != "0" {
+		// manual omit empty TimeoutHeight since it's represented by a string
+		signDoc.TimeoutHeight = tx.Body.TimeoutHeight
+	}
+	bz, err := json.Marshal(signDoc)
 	if err != nil {
 		return nil, err
 	}
