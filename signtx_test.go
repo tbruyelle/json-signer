@@ -191,7 +191,7 @@ func TestGetBytesToSign(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 
-			bytesToSign, err := getBytesToSign(tt.tx, "chainid-1", 1, 2)
+			bytesToSign, err := getBytesToSign(tt.tx, "chainid-1", "1", "2")
 
 			require.NoError(err)
 			require.JSONEq(tt.expected, string(bytesToSign))
@@ -270,7 +270,7 @@ func TestSignTx(t *testing.T) {
 			require := require.New(t)
 			assert := assert.New(t)
 
-			signedTx, err := signTx(tt.tx, kr, tt.keyname, "chain-id", 42, 1)
+			signedTx, err := signTx(tt.tx, kr, tt.keyname, "chain-id", "42", "1")
 
 			require.NoError(err)
 			assert.Equal(tt.expectedSignerInfos, signedTx.AuthInfo.SignerInfos)

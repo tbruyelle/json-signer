@@ -3,22 +3,16 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 
-	"github.com/tbruyelle/json-signer/codec"
 	"github.com/tbruyelle/json-signer/keyring"
 	"golang.org/x/exp/maps"
 
-	"cosmossdk.io/math"
-
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
 )
 
 const signModeAminoJSON = "SIGN_MODE_LEGACY_AMINO_JSON"
 
-func signTx(tx Tx, kr keyring.Keyring, signer, chainID string, account, sequence uint64) (Tx, error) {
+func signTx(tx Tx, kr keyring.Keyring, signer, chainID, account, sequence string) (Tx, error) {
 	key, err := kr.Get(signer + ".info")
 	if err != nil {
 		return Tx{}, err
@@ -65,24 +59,7 @@ var protoToAminoTypeMap = map[string]string{
 
 // getBytesToSign creates the SignDoc from tx, and serializes it using the
 // amino-json format.
-func getBytesToSign(tx Tx, chainID string, account, sequence uint64) ([]byte, error) {
-	fee := tx.AuthInfo.Fee
-	gas, err := strconv.ParseUint(fee.GasLimit, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-	stdFee := legacytx.StdFee{
-		Gas:     gas,
-		Payer:   fee.Payer,
-		Granter: fee.Granter,
-	}
-	for _, a := range fee.Amount {
-		amount, ok := math.NewIntFromString(a.Amount)
-		if !ok {
-			return nil, fmt.Errorf("Cannot get math.Int from %q", a.Amount)
-		}
-		stdFee.Amount = append(stdFee.Amount, sdk.NewCoin(a.Denom, amount))
-	}
+func getBytesToSign(tx Tx, chainID, account, sequence string) ([]byte, error) {
 	msgsBytes := make([]json.RawMessage, 0, len(tx.Body.Messages))
 	for _, msg := range tx.Body.Messages {
 		// This is the weak part of the program, where proto-json format from msg
@@ -93,23 +70,18 @@ func getBytesToSign(tx Tx, chainID string, account, sequence uint64) ([]byte, er
 		}
 		msgsBytes = append(msgsBytes, mustSortJSON(bz))
 	}
-	feeBytes, err := codec.Amino.MarshalJSON(stdFee)
+	feeBytes, err := json.Marshal(tx.AuthInfo.Fee.FeeToSign())
 	if err != nil {
 		return nil, err
 	}
-	timeoutHeight, err := strconv.ParseUint(tx.Body.TimeoutHeight, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-
-	bz, err := codec.Amino.MarshalJSON(legacytx.StdSignDoc{
+	bz, err := json.Marshal(SignDoc{
 		AccountNumber: account,
 		ChainID:       chainID,
 		Fee:           json.RawMessage(feeBytes),
 		Memo:          tx.Body.Memo,
 		Msgs:          msgsBytes,
 		Sequence:      sequence,
-		TimeoutHeight: timeoutHeight,
+		TimeoutHeight: tx.Body.TimeoutHeight,
 	})
 	if err != nil {
 		return nil, err
@@ -179,6 +151,29 @@ type Fee struct {
 	Granter  string `json:"granter,omitempty"`
 }
 
+// FeeToSign is the same as Fee except for the Gas field which must outputs as
+// `gas` instead of `gas_limit` in the JSON format.
+type FeeToSign struct {
+	Amount  []Coin `json:"amount,omitempty"`
+	Gas     string `json:"gas,omitempty"`
+	Payer   string `json:"payer,omitempty"`
+	Granter string `json:"granter,omitempty"`
+}
+
+func (f Fee) FeeToSign() FeeToSign {
+	return FeeToSign{
+		Amount:  f.Amount,
+		Gas:     f.GasLimit,
+		Payer:   f.Payer,
+		Granter: f.Granter,
+	}
+}
+
+type Coin struct {
+	Denom  string `json:"denom"`
+	Amount string `json:"amount"`
+}
+
 type SignerInfo struct {
 	PublicKey any      `json:"public_key"`
 	ModeInfo  ModeInfo `json:"mode_info"`
@@ -193,7 +188,12 @@ type Single struct {
 	Mode string `json:"mode"`
 }
 
-type Coin struct {
-	Denom  string `json:"denom"`
-	Amount string `json:"amount"`
+type SignDoc struct {
+	AccountNumber string            `json:"account_number"`
+	Sequence      string            `json:"sequence"`
+	TimeoutHeight string            `json:"timeout_height,omitempty"`
+	ChainID       string            `json:"chain_id"`
+	Memo          string            `json:"memo"`
+	Fee           json.RawMessage   `json:"fee"`
+	Msgs          []json.RawMessage `json:"msgs"`
 }

@@ -67,8 +67,8 @@ func signTxCmd() *ffcli.Command {
 	keyringBackend := fs.String("keyring-backend", "", "Keyring backend, which can be one of 'keychain' (macos), 'pass', 'kwallet' (linux), or 'file'")
 	signer := fs.String("from", "", "Signer key name")
 	chainID := fs.String("chain-id", "", "Chain identifier")
-	account := fs.Uint64("account", 0, "Account number")
-	sequence := fs.Uint64("sequence", 0, "Sequence number")
+	account := fs.String("account", "", "Account number")
+	sequence := fs.String("sequence", "", "Sequence number")
 	return &ffcli.Command{
 		Name:       "sign-tx",
 		ShortUsage: "json-signer sign-tx --from <key> --keyring-dir <dir> --chain-id <chainID> --sequence <sequence> --account <account> <tx.json>",
