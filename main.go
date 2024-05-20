@@ -54,7 +54,7 @@ func listKeysCmd() *ffcli.Command {
 				return nil
 			}
 			for i, key := range keys {
-				fmt.Printf("%d) %s type=%s pubkey=%s\n", i+1, key.Name(), key.GetType(), "TODO")
+				fmt.Printf("%d) %s type=%s pubkey=%s\n", i+1, key.Name(), key.Type(), "TODO")
 			}
 			return nil
 		},

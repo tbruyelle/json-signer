@@ -11,7 +11,10 @@ require (
 	golang.org/x/exp v0.0.0-20240404231335-c0f41cb1a7a0
 )
 
-replace github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
+replace (
+	github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
+	github.com/tbruyelle/keyring-compat => ../keyring-compat
+)
 
 require (
 	cosmossdk.io/api v0.7.4 // indirect

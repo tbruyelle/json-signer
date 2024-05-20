@@ -2,9 +2,12 @@ package main_test
 
 import (
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/rogpeppe/go-internal/testscript"
+
+	"github.com/tbruyelle/keyring-compat"
 )
 
 func TestScripts(t *testing.T) {
@@ -37,6 +40,25 @@ func TestScripts(t *testing.T) {
 			},
 		*/
 		Cmds: map[string]func(ts *testscript.TestScript, neg bool, args []string){
+			"fillenvs": func(ts *testscript.TestScript, neg bool, args []string) {
+				kr, err := keyring.New(
+					keyring.BackendType("file"),
+					filepath.Join(ts.Getenv("WORK"), "gaiad", "keyring-test"),
+					func(_ string) (string, error) { return "test", nil },
+				)
+				if err != nil {
+					ts.Fatalf(err.Error())
+				}
+				k, err := kr.Get("test1.info")
+				if err != nil {
+					ts.Fatalf(err.Error())
+				}
+				addr, err := k.Bech32Address("cosmos")
+				if err != nil {
+					ts.Fatalf(err.Error())
+				}
+				ts.Setenv("TEST1", addr)
+			},
 			"gaiad": func(ts *testscript.TestScript, neg bool, args []string) {
 				tsExec(ts, neg, "/tmp/gaiad", args)
 			},

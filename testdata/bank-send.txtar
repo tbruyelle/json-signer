@@ -8,9 +8,10 @@ gaiad genesis add-genesis-account test1 1000000000uatom --home $WORK/gaiad --key
 gaiad genesis gentx val1 1000000000stake --home $WORK/gaiad --keyring-backend test 
 gaiad genesis collect-gentxs --home $WORK/gaiad
 exec /tmp/gaiad start --home $WORK/gaiad --minimum-gas-prices 100uatom &
-exec sleep 5
+exec sleep 10
+fillenvs
 # Check account
-gaiad q auth account cosmos1vza9q0anvpe72x55mscxn6g83wgwn7s7flkxmd --home $WORK/gaiad
+gaiad q auth account $TEST1 --home $WORK/gaiad
 # Generate tx
 gaiad tx bank send test1 cosmos1l0znsvddllw9knha3yx2svnlxny676d8ns7uys 100000uatom --home $WORK/gaiad --fees 1000uatom --generate-only --account-number 1 --sequence 1 --gas 100000 --keyring-backend test
 cp stdout tx.json
