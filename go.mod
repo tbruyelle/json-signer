@@ -7,14 +7,11 @@ require (
 	github.com/peterbourgon/ff/v3 v3.4.0
 	github.com/rogpeppe/go-internal v1.12.0
 	github.com/stretchr/testify v1.9.0
-	github.com/tbruyelle/keyring-compat v0.0.0-20240520111243-4c7320ee4c02
+	github.com/tbruyelle/keyring-compat v0.0.0-20240520164718-f9c1db0bd3f2
 	golang.org/x/exp v0.0.0-20240404231335-c0f41cb1a7a0
 )
 
-replace (
-	github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
-	github.com/tbruyelle/keyring-compat => ../keyring-compat
-)
+replace github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
 
 require (
 	cosmossdk.io/api v0.7.4 // indirect
