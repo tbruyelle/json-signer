@@ -1,28 +1,28 @@
 # Setup gaia node
-gaiad init gaia-test --home $WORK/gaiad --chain-id cosmos-dev
-gaiad config chain-id cosmos-dev --home $WORK/gaiad
-gaiad keys add val1 --home $WORK/gaiad --keyring-backend test
-gaiad keys add test1 --home $WORK/gaiad --keyring-backend test
-gaiad genesis add-genesis-account val1 1000000000stake --home $WORK/gaiad --keyring-backend test
-gaiad genesis add-genesis-account test1 1000000000uatom --home $WORK/gaiad --keyring-backend test
-gaiad genesis gentx val1 1000000000stake --home $WORK/gaiad --keyring-backend test 
-gaiad genesis collect-gentxs --home $WORK/gaiad
-exec /tmp/gaiad start --home $WORK/gaiad --minimum-gas-prices 100uatom &
+exec $GAIAD init gaia-test --home $WORK/gaiad --chain-id cosmos-dev
+exec $GAIAD config chain-id cosmos-dev --home $WORK/gaiad
+exec $GAIAD keys add val1 --home $WORK/gaiad --keyring-backend test
+exec $GAIAD keys add test1 --home $WORK/gaiad --keyring-backend test
+exec $GAIAD genesis add-genesis-account val1 1000000000stake --home $WORK/gaiad --keyring-backend test
+exec $GAIAD genesis add-genesis-account test1 1000000000uatom --home $WORK/gaiad --keyring-backend test
+exec $GAIAD genesis gentx val1 1000000000stake --home $WORK/gaiad --keyring-backend test 
+exec $GAIAD genesis collect-gentxs --home $WORK/gaiad
+exec $GAIAD start --home $WORK/gaiad --minimum-gas-prices 100uatom &
 exec sleep 10
 fillenvs
-# Check account
-gaiad q auth account $TEST1 --home $WORK/gaiad
+# Check account exists
+exec $GAIAD q auth account $TEST1 --home $WORK/gaiad
 # Generate tx
-gaiad tx bank send test1 cosmos1l0znsvddllw9knha3yx2svnlxny676d8ns7uys 100000uatom --home $WORK/gaiad --fees 1000uatom --generate-only --account-number 1 --sequence 0 --gas 100000 --keyring-backend test
+exec $GAIAD tx bank send test1 cosmos1l0znsvddllw9knha3yx2svnlxny676d8ns7uys 100000uatom --home $WORK/gaiad --fees 1000uatom --generate-only --account-number 1 --sequence 0 --gas 100000 --keyring-backend test
 cp stdout tx.json
 
 # Sign tx
 ttyin -stdin keyring-pwd
-json-signer sign-tx -from=test1 -keyring-dir=$WORK/gaiad/keyring-test -keyring-backend file -account=1 -sequence=0 -chain-id=cosmos-dev tx.json
+exec $JSONSIGNER sign-tx -from=test1 -keyring-dir=$WORK/gaiad/keyring-test -keyring-backend file -account=1 -sequence=0 -chain-id=cosmos-dev tx.json
 cp stdout tx-signed.json
 
 # Validate signature
-gaiad tx validate-signatures tx-signed.json --home $WORK/gaiad 
+exec $GAIAD tx validate-signatures tx-signed.json --home $WORK/gaiad 
 
 stop
 -- keyring-pwd --
