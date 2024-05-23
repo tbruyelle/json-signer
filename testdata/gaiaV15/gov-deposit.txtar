@@ -1,7 +1,4 @@
-# Create a proposal
-exec $GAIAD tx gov submit-proposal prop1.json --from=$TEST2 --home=$GAIA_HOME --fees=1000stake --gas=auto --keyring-backend=test -y
-
-# Generate a deposit tx
+# Generate tx
 exec $GAIAD tx gov deposit 1 10uatom --from=$TEST1 --home=$GAIA_HOME --fees 1000uatom --generate-only --account-number 1 --sequence 0 --gas 100000 --keyring-backend test
 cp stdout tx.json
 
@@ -15,10 +12,3 @@ exec $GAIAD tx validate-signatures tx-signed.json --home=$GAIA_HOME
 
 -- keyring-pwd --
 test
--- prop1.json --
-{
-  "metadata": "4pIMOgIGx1vZGU=",
-  "deposit": "100000stake",
-  "title": "My proposal",
-  "summary": "A short summary of my proposal"
-}
