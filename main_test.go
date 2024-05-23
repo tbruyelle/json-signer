@@ -78,7 +78,8 @@ func setupGaiaNode(t *testing.T) node {
 	n.run(t, "keys", "add", "test1", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "keys", "add", "test2", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "genesis", "add-genesis-account", "val1", "1000000000stake", n.homeFlag(), keyringBackendFlag)
-	n.run(t, "genesis", "add-genesis-account", "test1", "1000000000uatom", n.homeFlag(), keyringBackendFlag)
+	n.run(t, "genesis", "add-genesis-account", "test1", "1000000000stake", n.homeFlag(), keyringBackendFlag)
+	n.run(t, "genesis", "add-genesis-account", "test2", "1000000000stake", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "genesis", "gentx", "val1", "1000000000stake", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "genesis", "collect-gentxs", n.homeFlag())
 

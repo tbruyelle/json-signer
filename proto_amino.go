@@ -9,8 +9,10 @@ import (
 var protoToAminoTypeMap = map[string]string{
 	"/cosmos.bank.v1beta1.MsgSend":          "cosmos-sdk/MsgSend",
 	"/cosmos.gov.v1beta1.MsgSubmitProposal": "cosmos-sdk/MsgSubmitProposal",
+	"/cosmos.gov.v1beta1.MsgDeposit":        "cosmos-sdk/MsgDeposit",
 	"/cosmos.gov.v1beta1.TextProposal":      "cosmos-sdk/TextProposal",
 	"/cosmos.gov.v1.MsgSubmitProposal":      "cosmos-sdk/v1/MsgSubmitProposal",
+	"/cosmos.gov.v1.MsgDeposit":             "cosmos-sdk/v1/MsgDeposit",
 	"/govgen.gov.v1beta1.MsgSubmitProposal": "cosmos-sdk/MsgSubmitProposal",
 	"/govgen.gov.v1beta1.TextProposal":      "cosmos-sdk/TextProposal",
 }
