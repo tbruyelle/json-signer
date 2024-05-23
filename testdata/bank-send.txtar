@@ -8,7 +8,6 @@ exec $GAIAD genesis add-genesis-account test1 1000000000uatom --home $WORK/gaiad
 exec $GAIAD genesis gentx val1 1000000000stake --home $WORK/gaiad --keyring-backend test 
 exec $GAIAD genesis collect-gentxs --home $WORK/gaiad
 exec $GAIAD start --home $WORK/gaiad --minimum-gas-prices 100uatom &
-exec sleep 10
 fillenvs
 # Check account exists
 exec $GAIAD q auth account $TEST1 --home $WORK/gaiad
