@@ -9,5 +9,6 @@ cp stdout tx-signed.json
 
 # Validate signature
 exec $GAIAD tx validate-signatures tx-signed.json --home=$GAIA_HOME
+
 -- keyring-pwd --
 test

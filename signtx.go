@@ -12,23 +12,21 @@ import (
 
 const signModeAminoJSON = "SIGN_MODE_LEGACY_AMINO_JSON"
 
-func signTx(tx Tx, kr keyring.Keyring, signer, chainID, account, sequence string) (Tx, error) {
+func signTx(tx Tx, kr keyring.Keyring, signer, chainID, account, sequence string) (Tx, []byte, error) {
 	key, err := kr.Get(signer + ".info")
 	if err != nil {
-		return Tx{}, err
+		return Tx{}, nil, err
 	}
 	// Get bytesToSign from tx
 	bytesToSign, err := getBytesToSign(tx, chainID, account, sequence)
 	if err != nil {
-		return Tx{}, err
+		return Tx{}, nil, err
 	}
-	// TODO present the bytes to sign and prompt for signing
-	// fmt.Println("BYTESTOSIGN", string(bytesToSign))
 
 	// Sign those bytes
 	signature, pubKey, err := key.Sign(bytesToSign)
 	if err != nil {
-		return Tx{}, err
+		return Tx{}, nil, err
 	}
 
 	// Update tx with signature and signer infos
@@ -45,14 +43,14 @@ func signTx(tx Tx, kr keyring.Keyring, signer, chainID, account, sequence string
 		},
 		Sequence: fmt.Sprint(sequence),
 	}}
-	return tx, nil
+	return tx, bytesToSign, nil
 }
 
-// XXX: use a function to automatically turns proto @type to amino type?
 var protoToAminoTypeMap = map[string]string{
 	"/cosmos.bank.v1beta1.MsgSend":          "cosmos-sdk/MsgSend",
 	"/cosmos.gov.v1beta1.MsgSubmitProposal": "cosmos-sdk/MsgSubmitProposal",
 	"/cosmos.gov.v1beta1.TextProposal":      "cosmos-sdk/TextProposal",
+	"/cosmos.gov.v1.MsgSubmitProposal":      "cosmos-sdk/v1/MsgSubmitProposal",
 	"/govgen.gov.v1beta1.MsgSubmitProposal": "cosmos-sdk/MsgSubmitProposal",
 	"/govgen.gov.v1beta1.TextProposal":      "cosmos-sdk/TextProposal",
 }
@@ -110,6 +108,7 @@ func mustSortJSON(bz []byte) []byte {
 // protoToAminoJSON turns proto json to amino json.
 // It works by mapping the proto `@type` into amino `type`, and then
 // encapsulate the other fields in a amino `value` field.
+// TODO add parameters proto-to-amino map to extend global map
 func protoToAminoJSON(m map[string]any) map[string]any {
 	if protoType, ok := m["@type"]; ok {
 		aminoType, ok := protoToAminoTypeMap[protoType.(string)]

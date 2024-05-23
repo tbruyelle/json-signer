@@ -15,7 +15,7 @@ import (
 	"github.com/tbruyelle/keyring-compat"
 )
 
-func TestE2EGaia(t *testing.T) {
+func TestE2EGaiaV15(t *testing.T) {
 	jsonSignerBin := filepath.Join(t.TempDir(), "json-signer")
 	// Build json-signer bin
 	err := exec.Command("go", "build", "-o", jsonSignerBin, ".").Run()
@@ -29,7 +29,7 @@ func TestE2EGaia(t *testing.T) {
 	})
 
 	testscript.Run(t, testscript.Params{
-		Dir:      "testdata",
+		Dir:      "testdata/gaiaV15",
 		TestWork: true,
 		Setup: func(env *testscript.Env) error {
 			env.Setenv("GAIAD", gaiaNode.bin)

@@ -95,10 +95,11 @@ func signTxCmd() *ffcli.Command {
 			}
 
 			// TODO test with ledger
-			signedTx, err := signTx(tx, kr, *signer, *chainID, *account, *sequence)
+			signedTx, bytesToSign, err := signTx(tx, kr, *signer, *chainID, *account, *sequence)
 			if err != nil {
 				return err
 			}
+			fmt.Fprintf(os.Stderr, "Bytes to sign:\n%s\n", string(bytesToSign))
 
 			// Output tx
 			bz, err := json.MarshalIndent(signedTx, "", "  ")
