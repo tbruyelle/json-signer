@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/tbruyelle/keyring-compat"
-	"golang.org/x/exp/maps"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 )
@@ -44,15 +43,6 @@ func signTx(tx Tx, kr keyring.Keyring, signer, chainID, account, sequence string
 		Sequence: fmt.Sprint(sequence),
 	}}
 	return tx, bytesToSign, nil
-}
-
-var protoToAminoTypeMap = map[string]string{
-	"/cosmos.bank.v1beta1.MsgSend":          "cosmos-sdk/MsgSend",
-	"/cosmos.gov.v1beta1.MsgSubmitProposal": "cosmos-sdk/MsgSubmitProposal",
-	"/cosmos.gov.v1beta1.TextProposal":      "cosmos-sdk/TextProposal",
-	"/cosmos.gov.v1.MsgSubmitProposal":      "cosmos-sdk/v1/MsgSubmitProposal",
-	"/govgen.gov.v1beta1.MsgSubmitProposal": "cosmos-sdk/MsgSubmitProposal",
-	"/govgen.gov.v1beta1.TextProposal":      "cosmos-sdk/TextProposal",
 }
 
 // getBytesToSign creates the SignDoc from tx, and serializes it using the
@@ -103,31 +93,6 @@ func mustSortJSON(bz []byte) []byte {
 		panic(err)
 	}
 	return js
-}
-
-// protoToAminoJSON turns proto json to amino json.
-// It works by mapping the proto `@type` into amino `type`, and then
-// encapsulate the other fields in a amino `value` field.
-// TODO add parameters proto-to-amino map to extend global map
-func protoToAminoJSON(m map[string]any) map[string]any {
-	if protoType, ok := m["@type"]; ok {
-		aminoType, ok := protoToAminoTypeMap[protoType.(string)]
-		if !ok {
-			panic(fmt.Sprintf("can't find amino mapping for proto @type=%q", protoType))
-		}
-		m := maps.Clone(m)
-		delete(m, "@type")
-		return map[string]any{
-			"type":  aminoType,
-			"value": protoToAminoJSON(m),
-		}
-	}
-	for k, v := range m {
-		if mm, ok := v.(map[string]any); ok {
-			m[k] = protoToAminoJSON(mm)
-		}
-	}
-	return m
 }
 
 type Tx struct {
