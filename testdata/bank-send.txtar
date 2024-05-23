@@ -1,28 +1,13 @@
-# Setup gaia node
-exec $GAIAD init gaia-test --home $WORK/gaiad --chain-id cosmos-dev
-exec $GAIAD config chain-id cosmos-dev --home $WORK/gaiad
-exec $GAIAD keys add val1 --home $WORK/gaiad --keyring-backend test
-exec $GAIAD keys add test1 --home $WORK/gaiad --keyring-backend test
-exec $GAIAD genesis add-genesis-account val1 1000000000stake --home $WORK/gaiad --keyring-backend test
-exec $GAIAD genesis add-genesis-account test1 1000000000uatom --home $WORK/gaiad --keyring-backend test
-exec $GAIAD genesis gentx val1 1000000000stake --home $WORK/gaiad --keyring-backend test 
-exec $GAIAD genesis collect-gentxs --home $WORK/gaiad
-exec $GAIAD start --home $WORK/gaiad --minimum-gas-prices 100uatom &
-fillenvs
-# Check account exists
-exec $GAIAD q auth account $TEST1 --home $WORK/gaiad
 # Generate tx
-exec $GAIAD tx bank send test1 cosmos1l0znsvddllw9knha3yx2svnlxny676d8ns7uys 100000uatom --home $WORK/gaiad --fees 1000uatom --generate-only --account-number 1 --sequence 0 --gas 100000 --keyring-backend test
+exec $GAIAD tx bank send $TEST1 $TEST2 100000uatom --home=$GAIA_HOME --fees 1000uatom --generate-only --account-number 1 --sequence 0 --gas 100000 --keyring-backend test
 cp stdout tx.json
 
 # Sign tx
 ttyin -stdin keyring-pwd
-exec $JSONSIGNER sign-tx -from=test1 -keyring-dir=$WORK/gaiad/keyring-test -keyring-backend file -account=1 -sequence=0 -chain-id=cosmos-dev tx.json
+exec $JSONSIGNER sign-tx -from=test1 -keyring-dir=$GAIA_HOME/keyring-test -keyring-backend file -account=1 -sequence=0 -chain-id=cosmos-dev tx.json
 cp stdout tx-signed.json
 
 # Validate signature
-exec $GAIAD tx validate-signatures tx-signed.json --home $WORK/gaiad 
-
-stop
+exec $GAIAD tx validate-signatures tx-signed.json --home=$GAIA_HOME
 -- keyring-pwd --
 test
