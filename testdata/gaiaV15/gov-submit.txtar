@@ -1,5 +1,20 @@
-# Generate tx
-exec $GAIAD tx gov submit-proposal prop.json --from=$TEST1 --home=$GAIA_HOME --fees 1000uatom --generate-only --account-number 1 --sequence 0 --gas 100000 --keyring-backend test
+# Generate proposal tx without message field
+# This case ensures that the empty messages field is omitted from the bytes to
+# sign.
+exec $GAIAD tx gov submit-proposal prop1.json --from=$TEST1 --home=$GAIA_HOME --fees 1000uatom --generate-only --account-number 1 --sequence 0 --gas 100000 --keyring-backend test
+cp stdout tx.json
+
+# Sign tx
+ttyin -stdin keyring-pwd
+exec $JSONSIGNER sign-tx -from=test1 -keyring-dir=$GAIA_HOME/keyring-test -keyring-backend file -account=1 -sequence=0 -chain-id=cosmos-dev tx.json
+cp stdout tx-signed.json
+
+# Validate signature
+exec $GAIAD tx validate-signatures tx-signed.json --home=$GAIA_HOME
+
+# Generate proposal tx with message field
+# This case ensures that array of messages are properly proto2amino mapped.
+exec $GAIAD tx gov submit-proposal prop2.json --from=$TEST1 --home=$GAIA_HOME --fees 1000uatom --generate-only --account-number 1 --sequence 0 --gas 100000 --keyring-backend test
 cp stdout tx.json
 
 # Sign tx
@@ -12,8 +27,29 @@ exec $GAIAD tx validate-signatures tx-signed.json --home=$GAIA_HOME
 
 -- keyring-pwd --
 test
--- prop.json --
+-- prop1.json --
 {
+  "metadata": "4pIMOgIGx1vZGU=",
+  "deposit": "10uatom",
+  "title": "My proposal",
+  "summary": "A short summary of my proposal"
+}
+-- prop2.json --
+{
+  "messages": [
+    {
+      "@type": "/cosmos.bank.v1beta1.MsgSend",
+      "from_address": "cosmos1p3ucd3ptpw902fluyjzhq3ffgq4ntddac9sa3s",
+      "to_address": "cosmos1nm0rrq86ucezaf8uj35pq9fpwr5r82cl8sc7p5",
+      "amount":[{"denom": "uatom","amount": "10"}]
+		},
+    {
+      "@type": "/cosmos.bank.v1beta1.MsgSend",
+      "from_address": "cosmos1p3ucd3ptpw902fluyjzhq3ffgq4ntddac9sa3s",
+      "to_address": "cosmos1nm0rrq86ucezaf8uj35pq9fpwr5r82cl8sc7p5",
+      "amount":[{"denom": "uatom","amount": "10"}]
+    }
+  ],
   "metadata": "4pIMOgIGx1vZGU=",
   "deposit": "10uatom",
   "title": "My proposal",

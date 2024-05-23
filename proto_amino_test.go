@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -143,6 +144,37 @@ func TestProtoToAminoJSON(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "proto types in array",
+			m: map[string]any{
+				"a": []map[string]any{
+					{
+						"@type": "/cosmos.bank.v1beta1.MsgSend",
+						"a1":    42,
+					},
+					{
+						"@type": "/cosmos.bank.v1beta1.MsgSend",
+						"a1":    44,
+					},
+				},
+			},
+			expectedAmino: map[string]any{
+				"a": []map[string]any{
+					{
+						"type": "cosmos-sdk/MsgSend",
+						"value": map[string]any{
+							"a1": 42,
+						},
+					},
+					{
+						"type": "cosmos-sdk/MsgSend",
+						"value": map[string]any{
+							"a1": 44,
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -156,10 +188,12 @@ func TestProtoToAminoJSON(t *testing.T) {
 					}
 				}()
 			}
+			orig := fmt.Sprint(tt.m)
 
 			amino := protoToAminoJSON(tt.m)
 
 			assert.Equal(tt.expectedAmino, amino)
+			assert.Equal(orig, fmt.Sprint(tt.m), "input parameter has been altered")
 		})
 	}
 }

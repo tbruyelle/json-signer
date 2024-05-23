@@ -19,30 +19,47 @@ var protoToAminoTypeMap = map[string]string{
 // It works by mapping the proto `@type` into amino `type`, and then
 // encapsulate the other fields in a amino `value` field.
 // TODO add parameter proto-to-amino map to extend the global map.
-func protoToAminoJSON(m map[string]any) map[string]any {
-	m = maps.Clone(m)
-	for k, v := range m {
-		if isEmptyValue(reflect.ValueOf(v)) {
-			delete(m, k)
+//
+// Contract: should never alter v
+func protoToAminoJSON(v any) any {
+	// fmt.Fprintf(os.Stderr, "TYPE %s %T\n", v, v)
+	x := reflect.ValueOf(v)
+	switch x.Kind() {
+	case reflect.Map:
+		// fmt.Fprintf(os.Stderr, "MAP\n")
+		m := maps.Clone(v.(map[string]any))
+		for k, v := range m {
+			// fmt.Fprintf(os.Stderr, "MAP ITEM %s %v\n", k, v)
+			if isEmptyValue(reflect.ValueOf(v)) {
+				// fmt.Fprintf(os.Stderr, "EMPTY\n")
+				delete(m, k)
+				continue
+			}
+			if k == "@type" {
+				aminoType, ok := protoToAminoTypeMap[v.(string)]
+				if !ok {
+					panic(fmt.Sprintf("can't find amino mapping for proto @type=%q", v))
+				}
+				delete(m, "@type")
+				return map[string]any{
+					"type":  aminoType,
+					"value": protoToAminoJSON(m),
+				}
+			}
+			m[k] = protoToAminoJSON(v)
 		}
+		return m
+	case reflect.Slice:
+		// fmt.Fprintf(os.Stderr, "SLICE\n")
+		s := reflect.MakeSlice(x.Type(), x.Len(), x.Cap())
+		for i := 0; i < x.Len(); i++ {
+			s.Index(i).Set(reflect.ValueOf(protoToAminoJSON(x.Index(i).Interface())))
+		}
+		return s.Interface()
+	default:
+		// fmt.Fprintf(os.Stderr, "DEFAULT\n")
+		return v
 	}
-	if protoType, ok := m["@type"]; ok {
-		aminoType, ok := protoToAminoTypeMap[protoType.(string)]
-		if !ok {
-			panic(fmt.Sprintf("can't find amino mapping for proto @type=%q", protoType))
-		}
-		delete(m, "@type")
-		return map[string]any{
-			"type":  aminoType,
-			"value": protoToAminoJSON(m),
-		}
-	}
-	for k, v := range m {
-		if mm, ok := v.(map[string]any); ok {
-			m[k] = protoToAminoJSON(mm)
-		}
-	}
-	return m
 }
 
 // Scavanged from https://go-review.googlesource.com/c/go/+/482415
