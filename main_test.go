@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -32,7 +33,12 @@ func TestE2EGaiaV15(t *testing.T) {
 		Dir:      "testdata/gaiaV15",
 		TestWork: true,
 		Setup: func(env *testscript.Env) error {
-			env.Setenv("GAIAD", gaiaNode.bin)
+			gaiadBin := gaiaNode.bin
+			if alternateBin := os.Getenv("GAIAD"); alternateBin != "" {
+				t.Logf("gaiad bin overrided by env '%s'", alternateBin)
+				gaiadBin = alternateBin
+			}
+			env.Setenv("GAIAD", gaiadBin)
 			env.Setenv("GAIA_HOME", gaiaNode.home)
 			env.Setenv("JSONSIGNER", jsonSignerBin)
 			env.Setenv("VAL1", gaiaNode.addrs.val1)
