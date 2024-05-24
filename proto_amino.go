@@ -18,7 +18,7 @@ var protoToAminoTypeMap = map[string]aminoType{
 	"/cosmos.gov.v1beta1.MsgVote": {
 		name: "cosmos-sdk/MsgVote",
 		enums: map[string]map[string]int{
-			"option": {
+			"/option": {
 				"VOTE_OPTION_UNSPECIFIED":  0,
 				"VOTE_OPTION_YES":          1,
 				"VOTE_OPTION_ABSTAIN":      2,
@@ -27,13 +27,38 @@ var protoToAminoTypeMap = map[string]aminoType{
 			},
 		},
 	},
+	"/cosmos.gov.v1beta1.MsgVoteWeighted": {
+		name: "cosmos-sdk/MsgVoteWeighted",
+		enums: map[string]map[string]int{
+			"/options/option": {
+				"VOTE_OPTION_UNSPECIFIED":  0,
+				"VOTE_OPTION_YES":          1,
+				"VOTE_OPTION_ABSTAIN":      2,
+				"VOTE_OPTION_NO":           3,
+				"VOTE_OPTION_NO_WITH_VETO": 4,
+			},
+		},
+	},
+	// TODO test other kind of proposal
 	"/cosmos.gov.v1beta1.TextProposal": {name: "cosmos-sdk/TextProposal"},
 	"/cosmos.gov.v1.MsgSubmitProposal": {name: "cosmos-sdk/v1/MsgSubmitProposal"},
 	"/cosmos.gov.v1.MsgDeposit":        {name: "cosmos-sdk/v1/MsgDeposit"},
 	"/cosmos.gov.v1.MsgVote": {
 		name: "cosmos-sdk/v1/MsgVote",
 		enums: map[string]map[string]int{
-			"option": {
+			"/option": {
+				"VOTE_OPTION_UNSPECIFIED":  0,
+				"VOTE_OPTION_YES":          1,
+				"VOTE_OPTION_ABSTAIN":      2,
+				"VOTE_OPTION_NO":           3,
+				"VOTE_OPTION_NO_WITH_VETO": 4,
+			},
+		},
+	},
+	"/cosmos.gov.v1.MsgVoteWeighted": {
+		name: "cosmos-sdk/v1/MsgVoteWeighted",
+		enums: map[string]map[string]int{
+			"/options/option": {
 				"VOTE_OPTION_UNSPECIFIED":  0,
 				"VOTE_OPTION_YES":          1,
 				"VOTE_OPTION_ABSTAIN":      2,
@@ -55,6 +80,20 @@ var protoToAminoTypeMap = map[string]aminoType{
 //
 // Contract: should never alter v
 func protoToAminoJSON(v any) any {
+	return _protoToAminoJSON(Context{}, v)
+}
+
+type Context struct {
+	lastProtoType string
+	path          string
+}
+
+func (c Context) appendPath(p string) Context {
+	c.path += "/" + p
+	return c
+}
+
+func _protoToAminoJSON(ctx Context, v any) any {
 	// fmt.Fprintf(os.Stderr, "TYPE %s %T\n", v, v)
 	x := reflect.ValueOf(v)
 	switch x.Kind() {
@@ -62,26 +101,17 @@ func protoToAminoJSON(v any) any {
 		// fmt.Fprintf(os.Stderr, "MAP\n")
 		m := maps.Clone(v.(map[string]any))
 		// Check if it's a proto @type
-		if protoType, ok := m["@type"]; ok {
-			aminoType, ok := protoToAminoTypeMap[protoType.(string)]
+		if typ, ok := m["@type"]; ok {
+			aminoType, ok := protoToAminoTypeMap[typ.(string)]
 			if !ok {
-				panic(fmt.Sprintf("can't find amino mapping for proto @type='%s'", protoType))
+				panic(fmt.Sprintf("can't find amino mapping for proto @type='%s'", typ))
 			}
-			// fmt.Fprintf(os.Stderr, "@TYPE %v %v\n", protoType, aminoType)
+			// fmt.Fprintf(os.Stderr, "@TYPE %v %v\n", typ, aminoType)
 			// remove field @type
 			delete(m, "@type")
-			// map proto enums if some are configured
-			for field, enum := range aminoType.enums {
-				val, ok := enum[m[field].(string)]
-				// fmt.Fprintln(os.Stderr, "ENUM", field, m[field], val, ok)
-				if !ok {
-					panic(fmt.Sprintf("can't find enum value for type '%s' and key '%v'", protoType, m[field]))
-				}
-				m[field] = val
-			}
 			return map[string]any{
 				"type":  aminoType.name,
-				"value": protoToAminoJSON(m),
+				"value": _protoToAminoJSON(Context{lastProtoType: typ.(string)}, m),
 			}
 		}
 		for k, v := range m {
@@ -91,18 +121,31 @@ func protoToAminoJSON(v any) any {
 				delete(m, k)
 				continue
 			}
-			m[k] = protoToAminoJSON(v)
+			// append path
+			m[k] = _protoToAminoJSON(ctx.appendPath(k), v)
 		}
 		return m
 	case reflect.Slice:
 		// fmt.Fprintf(os.Stderr, "SLICE\n")
 		s := reflect.MakeSlice(x.Type(), x.Len(), x.Cap())
+
 		for i := 0; i < x.Len(); i++ {
-			s.Index(i).Set(reflect.ValueOf(protoToAminoJSON(x.Index(i).Interface())))
+			s.Index(i).Set(reflect.ValueOf(_protoToAminoJSON(ctx, x.Index(i).Interface())))
 		}
 		return s.Interface()
 	default:
-		// fmt.Fprintf(os.Stderr, "DEFAULT\n")
+		// fmt.Fprintf(os.Stderr, "DEFAULT %s %v\n", ctx.path, v)
+		// map proto enums if some are configured
+		if aminoType, ok := protoToAminoTypeMap[ctx.lastProtoType]; ok {
+			if enumMap, ok := aminoType.enums[ctx.path]; ok {
+				enumVal, ok := enumMap[v.(string)]
+				if !ok {
+					panic(fmt.Sprintf("can't find enum value for type '%s', path '%s' and key '%v'", ctx.lastProtoType, ctx.path, v))
+				}
+				// fmt.Fprintln(os.Stderr, "ENUM", ctx.path, v, enumVal)
+				return enumVal
+			}
+		}
 		return v
 	}
 }

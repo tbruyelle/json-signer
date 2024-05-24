@@ -1,16 +1,26 @@
-# Generate tx
-exec $GAIAD tx gov vote 1 yes --from=$TEST1 --home=$GAIA_HOME --fees 1000uatom --generate-only --account-number 1 --sequence 0 --gas 100000 --keyring-backend test
+# Generate simple vote tx
+exec $GAIAD tx gov vote 1 yes --from=$TEST1 --home=$GAIA_HOME --fees=1000uatom --generate-only --account-number 1 --sequence=0 --gas=100000 --keyring-backend=test
 cp stdout tx.json
 
 # Sign tx
 ttyin -stdin keyring-pwd
-exec $JSONSIGNER sign-tx -from=test1 -keyring-dir=$GAIA_HOME/keyring-test -keyring-backend file -account=1 -sequence=0 -chain-id=cosmos-dev tx.json
+exec $JSONSIGNER sign-tx -from=test1 -keyring-dir=$GAIA_HOME/keyring-test -keyring-backend=file -account=1 -sequence=0 -chain-id=cosmos-dev tx.json
 cp stdout tx-signed.json
 
 # Validate signature
 exec $GAIAD tx validate-signatures tx-signed.json --home=$GAIA_HOME
 
-# TODO weighted vote
+# Generate weighted vote tx
+exec $GAIAD tx gov weighted-vote 1 yes=0.6,no=0.3,abstain=0.05,no_with_veto=0.05 --from=$TEST1 --home=$GAIA_HOME --fees=1000uatom --generate-only --account-number=1 --sequence=0 --gas=100000 --keyring-backend=test
+cp stdout tx.json
+
+# Sign tx
+ttyin -stdin keyring-pwd
+exec $JSONSIGNER sign-tx -from=test1 -keyring-dir=$GAIA_HOME/keyring-test -keyring-backend=file -account=1 -sequence=0 -chain-id=cosmos-dev tx.json
+cp stdout tx-signed.json
+
+# Validate signature
+exec $GAIAD tx validate-signatures tx-signed.json --home=$GAIA_HOME
 
 -- keyring-pwd --
 test

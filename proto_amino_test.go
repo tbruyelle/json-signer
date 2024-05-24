@@ -236,11 +236,8 @@ func TestProtoToAminoJSON(t *testing.T) {
 					{
 						"type": "cosmos-sdk/v1/MsgVote",
 						"value": map[string]any{
-							// NOTE: VOTE_OPTION_UNSPECIFIED is not present because it's an empty
-							// value (OK or KO? we'll see later, for now this vote option isn't
-							// available from the cli).
-							// "option": 0,
-							"x": "_",
+							"option": 0,
+							"x":      "_",
 						},
 					},
 					{
@@ -274,11 +271,8 @@ func TestProtoToAminoJSON(t *testing.T) {
 					{
 						"type": "cosmos-sdk/MsgVote",
 						"value": map[string]any{
-							// NOTE: VOTE_OPTION_UNSPECIFIED is not present because it's an empty
-							// value (OK or KO? we'll see later, for now this vote option isn't
-							// available from the cli).
-							// "option": 0,
-							"x": "_",
+							"option": 0,
+							"x":      "_",
 						},
 					},
 					{
@@ -307,6 +301,121 @@ func TestProtoToAminoJSON(t *testing.T) {
 						"value": map[string]any{
 							"option": 4,
 							"x":      "nwv",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "MsgVoteWeighted.options[].option enum",
+			m: map[string]any{
+				"a": []map[string]any{
+					{
+						"@type": "/cosmos.gov.v1.MsgVoteWeighted",
+						"options": []map[string]any{
+							{
+								"option": "VOTE_OPTION_UNSPECIFIED",
+								"weight": "0.1",
+							},
+							{
+								"option": "VOTE_OPTION_YES",
+								"weight": "0.2",
+							},
+							{
+								"option": "VOTE_OPTION_ABSTAIN",
+								"weight": "0.3",
+							},
+							{
+								"option": "VOTE_OPTION_NO",
+								"weight": "0.4",
+							},
+							{
+								"option": "VOTE_OPTION_NO_WITH_VETO",
+								"weight": "0.5",
+							},
+						},
+					},
+					{
+						"@type": "/cosmos.gov.v1beta1.MsgVoteWeighted",
+						"options": []map[string]any{
+							{
+								"option": "VOTE_OPTION_UNSPECIFIED",
+								"weight": "0.1",
+							},
+							{
+								"option": "VOTE_OPTION_YES",
+								"weight": "0.2",
+							},
+							{
+								"option": "VOTE_OPTION_ABSTAIN",
+								"weight": "0.3",
+							},
+							{
+								"option": "VOTE_OPTION_NO",
+								"weight": "0.4",
+							},
+							{
+								"option": "VOTE_OPTION_NO_WITH_VETO",
+								"weight": "0.5",
+							},
+						},
+					},
+				},
+			},
+			expectedAmino: map[string]any{
+				"a": []map[string]any{
+					{
+						"type": "cosmos-sdk/v1/MsgVoteWeighted",
+						"value": map[string]any{
+							"options": []map[string]any{
+								{
+									"option": 0,
+									"weight": "0.1",
+								},
+								{
+									"option": 1,
+									"weight": "0.2",
+								},
+								{
+									"option": 2,
+									"weight": "0.3",
+								},
+								{
+									"option": 3,
+									"weight": "0.4",
+								},
+								{
+									"option": 4,
+									"weight": "0.5",
+								},
+							},
+						},
+					},
+					{
+						"type": "cosmos-sdk/MsgVoteWeighted",
+						"value": map[string]any{
+							"options": []map[string]any{
+								{
+									"option": 0,
+									"weight": "0.1",
+								},
+								{
+									"option": 1,
+									"weight": "0.2",
+								},
+								{
+									"option": 2,
+									"weight": "0.3",
+								},
+								{
+									"option": 3,
+									"weight": "0.4",
+								},
+								{
+									"option": 4,
+									"weight": "0.5",
+								},
+							},
 						},
 					},
 				},
