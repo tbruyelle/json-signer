@@ -11,6 +11,14 @@ type aminoType struct {
 	enums map[string]map[string]int
 }
 
+var voteOptionsEnum = map[string]int{
+	"VOTE_OPTION_UNSPECIFIED":  0,
+	"VOTE_OPTION_YES":          1,
+	"VOTE_OPTION_ABSTAIN":      2,
+	"VOTE_OPTION_NO":           3,
+	"VOTE_OPTION_NO_WITH_VETO": 4,
+}
+
 var protoToAminoTypeMap = map[string]aminoType{
 	"/cosmos.bank.v1beta1.MsgSend":          {name: "cosmos-sdk/MsgSend"},
 	"/cosmos.gov.v1beta1.MsgSubmitProposal": {name: "cosmos-sdk/MsgSubmitProposal"},
@@ -18,25 +26,13 @@ var protoToAminoTypeMap = map[string]aminoType{
 	"/cosmos.gov.v1beta1.MsgVote": {
 		name: "cosmos-sdk/MsgVote",
 		enums: map[string]map[string]int{
-			"/option": {
-				"VOTE_OPTION_UNSPECIFIED":  0,
-				"VOTE_OPTION_YES":          1,
-				"VOTE_OPTION_ABSTAIN":      2,
-				"VOTE_OPTION_NO":           3,
-				"VOTE_OPTION_NO_WITH_VETO": 4,
-			},
+			"/option": voteOptionsEnum,
 		},
 	},
 	"/cosmos.gov.v1beta1.MsgVoteWeighted": {
 		name: "cosmos-sdk/MsgVoteWeighted",
 		enums: map[string]map[string]int{
-			"/options/option": {
-				"VOTE_OPTION_UNSPECIFIED":  0,
-				"VOTE_OPTION_YES":          1,
-				"VOTE_OPTION_ABSTAIN":      2,
-				"VOTE_OPTION_NO":           3,
-				"VOTE_OPTION_NO_WITH_VETO": 4,
-			},
+			"/options/option": voteOptionsEnum,
 		},
 	},
 	// TODO test other kind of proposal
@@ -46,25 +42,13 @@ var protoToAminoTypeMap = map[string]aminoType{
 	"/cosmos.gov.v1.MsgVote": {
 		name: "cosmos-sdk/v1/MsgVote",
 		enums: map[string]map[string]int{
-			"/option": {
-				"VOTE_OPTION_UNSPECIFIED":  0,
-				"VOTE_OPTION_YES":          1,
-				"VOTE_OPTION_ABSTAIN":      2,
-				"VOTE_OPTION_NO":           3,
-				"VOTE_OPTION_NO_WITH_VETO": 4,
-			},
+			"/option": voteOptionsEnum,
 		},
 	},
 	"/cosmos.gov.v1.MsgVoteWeighted": {
 		name: "cosmos-sdk/v1/MsgVoteWeighted",
 		enums: map[string]map[string]int{
-			"/options/option": {
-				"VOTE_OPTION_UNSPECIFIED":  0,
-				"VOTE_OPTION_YES":          1,
-				"VOTE_OPTION_ABSTAIN":      2,
-				"VOTE_OPTION_NO":           3,
-				"VOTE_OPTION_NO_WITH_VETO": 4,
-			},
+			"/options/option": voteOptionsEnum,
 		},
 	},
 	"/govgen.gov.v1beta1.MsgSubmitProposal": {name: "cosmos-sdk/MsgSubmitProposal"},
