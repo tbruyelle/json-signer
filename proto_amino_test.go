@@ -20,7 +20,7 @@ func TestProtoToAminoJSON(t *testing.T) {
 			m: map[string]any{
 				"@type": "xxx",
 			},
-			expectedPanic: "can't find amino mapping for proto @type=\"xxx\"",
+			expectedPanic: "can't find amino mapping for proto @type='xxx'",
 		},
 		{
 			name: "empty fields are omitted",
@@ -175,6 +175,143 @@ func TestProtoToAminoJSON(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "MsgVote.option enum",
+			m: map[string]any{
+				"a": []map[string]any{
+					{
+						"@type":  "/cosmos.gov.v1.MsgVote",
+						"option": "VOTE_OPTION_UNSPECIFIED",
+						"x":      "_",
+					},
+					{
+						"@type":  "/cosmos.gov.v1.MsgVote",
+						"option": "VOTE_OPTION_YES",
+						"x":      "yes",
+					},
+					{
+						"@type":  "/cosmos.gov.v1.MsgVote",
+						"option": "VOTE_OPTION_ABSTAIN",
+						"x":      "abstain",
+					},
+					{
+						"@type":  "/cosmos.gov.v1.MsgVote",
+						"option": "VOTE_OPTION_NO",
+						"x":      "no",
+					},
+					{
+						"@type":  "/cosmos.gov.v1.MsgVote",
+						"option": "VOTE_OPTION_NO_WITH_VETO",
+						"x":      "nwv",
+					},
+					{
+						"@type":  "/cosmos.gov.v1beta1.MsgVote",
+						"option": "VOTE_OPTION_UNSPECIFIED",
+						"x":      "_",
+					},
+					{
+						"@type":  "/cosmos.gov.v1beta1.MsgVote",
+						"option": "VOTE_OPTION_YES",
+						"x":      "yes",
+					},
+					{
+						"@type":  "/cosmos.gov.v1beta1.MsgVote",
+						"option": "VOTE_OPTION_ABSTAIN",
+						"x":      "abstain",
+					},
+					{
+						"@type":  "/cosmos.gov.v1beta1.MsgVote",
+						"option": "VOTE_OPTION_NO",
+						"x":      "no",
+					},
+					{
+						"@type":  "/cosmos.gov.v1beta1.MsgVote",
+						"option": "VOTE_OPTION_NO_WITH_VETO",
+						"x":      "nwv",
+					},
+				},
+			},
+			expectedAmino: map[string]any{
+				"a": []map[string]any{
+					{
+						"type": "cosmos-sdk/v1/MsgVote",
+						"value": map[string]any{
+							// NOTE: VOTE_OPTION_UNSPECIFIED is not present because it's an empty
+							// value (OK or KO? we'll see later, for now this vote option isn't
+							// available from the cli).
+							// "option": 0,
+							"x": "_",
+						},
+					},
+					{
+						"type": "cosmos-sdk/v1/MsgVote",
+						"value": map[string]any{
+							"option": 1,
+							"x":      "yes",
+						},
+					},
+					{
+						"type": "cosmos-sdk/v1/MsgVote",
+						"value": map[string]any{
+							"option": 2,
+							"x":      "abstain",
+						},
+					},
+					{
+						"type": "cosmos-sdk/v1/MsgVote",
+						"value": map[string]any{
+							"option": 3,
+							"x":      "no",
+						},
+					},
+					{
+						"type": "cosmos-sdk/v1/MsgVote",
+						"value": map[string]any{
+							"option": 4,
+							"x":      "nwv",
+						},
+					},
+					{
+						"type": "cosmos-sdk/MsgVote",
+						"value": map[string]any{
+							// NOTE: VOTE_OPTION_UNSPECIFIED is not present because it's an empty
+							// value (OK or KO? we'll see later, for now this vote option isn't
+							// available from the cli).
+							// "option": 0,
+							"x": "_",
+						},
+					},
+					{
+						"type": "cosmos-sdk/MsgVote",
+						"value": map[string]any{
+							"option": 1,
+							"x":      "yes",
+						},
+					},
+					{
+						"type": "cosmos-sdk/MsgVote",
+						"value": map[string]any{
+							"option": 2,
+							"x":      "abstain",
+						},
+					},
+					{
+						"type": "cosmos-sdk/MsgVote",
+						"value": map[string]any{
+							"option": 3,
+							"x":      "no",
+						},
+					},
+					{
+						"type": "cosmos-sdk/MsgVote",
+						"value": map[string]any{
+							"option": 4,
+							"x":      "nwv",
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -184,7 +321,7 @@ func TestProtoToAminoJSON(t *testing.T) {
 				defer func() {
 					r := recover()
 					if r == nil || r.(string) != tt.expectedPanic {
-						require.Fail("expected panic %q got %q", tt.expectedPanic, r)
+						require.Failf("expected panic", "want %q got %q", tt.expectedPanic, r)
 					}
 				}()
 			}
