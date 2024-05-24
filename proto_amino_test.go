@@ -20,7 +20,7 @@ func TestProtoToAminoJSON(t *testing.T) {
 			m: map[string]any{
 				"@type": "xxx",
 			},
-			expectedPanic: "can't find amino mapping for proto @type='xxx'",
+			expectedPanic: "can't find amino type for proto @type='xxx'",
 		},
 		{
 			name: "empty fields are omitted",
