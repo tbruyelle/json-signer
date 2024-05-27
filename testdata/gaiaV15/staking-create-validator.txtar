@@ -1,0 +1,26 @@
+# Generate tx with secp256p1 key
+exec $GAIAD tx staking create-validator --pubkey '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"AjbjaJ/tXxhwPLxsg+bZSiNsn/Ony6af7cOa+QULXCn3"}' --amount 1000stake --moniker mon --identity id --commission-rate 0.1 --commission-max-rate 0.1 --commission-max-change-rate 0.1 --from=$TEST1 --home=$GAIA_HOME --fees=1000uatom --generate-only --account-number 1 --sequence=0 --gas=100000 --keyring-backend=test
+cp stdout tx.json
+
+# Sign tx
+ttyin -stdin keyring-pwd
+exec $JSONSIGNER sign-tx -from=test1 -keyring-dir=$GAIA_HOME/keyring-test -keyring-backend=file -account=1 -sequence=0 -chain-id=cosmos-dev tx.json
+cp stdout tx-signed.json
+
+# Validate signature
+exec $GAIAD tx validate-signatures tx-signed.json --home=$GAIA_HOME
+
+# Generate tx with ed25519 key
+exec $GAIAD tx staking create-validator --pubkey '{"@type":"/cosmos.crypto.ed25519.PubKey","key":"AjbjaJ/tXxhwPLxsg+bZSiNsn/Ony6af7cOa+QULXCn3"}' --amount 1000stake --moniker mon --identity id --commission-rate 0.1 --commission-max-rate 0.1 --commission-max-change-rate 0.1 --from=$TEST1 --home=$GAIA_HOME --fees=1000uatom --generate-only --account-number 1 --sequence=0 --gas=100000 --keyring-backend=test
+cp stdout tx.json
+
+# Sign tx
+ttyin -stdin keyring-pwd
+exec $JSONSIGNER sign-tx -from=test1 -keyring-dir=$GAIA_HOME/keyring-test -keyring-backend=file -account=1 -sequence=0 -chain-id=cosmos-dev tx.json
+cp stdout tx-signed.json
+
+# Validate signature
+exec $GAIAD tx validate-signatures tx-signed.json --home=$GAIA_HOME
+
+-- keyring-pwd --
+test

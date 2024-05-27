@@ -421,6 +421,21 @@ func TestProtoToAminoJSON(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "inline field",
+			m: map[string]any{
+				"pubkey": map[string]any{
+					"@type": "/cosmos.crypto.secp256k1.PubKey",
+					"key":   "AjbjaJ/tXxhwPLxsg+bZSiNsn/Ony6af7cOa+QULXCn3",
+				},
+			},
+			expectedAmino: map[string]any{
+				"pubkey": map[string]any{
+					"type":  "tendermint/PubKeySecp256k1",
+					"value": "AjbjaJ/tXxhwPLxsg+bZSiNsn/Ony6af7cOa+QULXCn3",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

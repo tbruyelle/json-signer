@@ -9,6 +9,11 @@ import (
 type aminoType struct {
 	name  string
 	enums map[string]map[string]int
+	// If filled, the serialization will inline the named field.
+	// Useful for secp256k1 and ed25519 keys from cosmos-sdk/crypto/keys, for
+	// which the marshalling inlines the Key field instead of an object
+	// containing that Key field.
+	inlineField string
 }
 
 var voteOptionsEnum = map[string]int{
@@ -19,7 +24,9 @@ var voteOptionsEnum = map[string]int{
 	"VOTE_OPTION_NO_WITH_VETO": 4,
 }
 
+// TODO put this in a config file?
 var protoToAminoTypeMap = map[string]aminoType{
+	// cosmos-sdk mapping
 	"/cosmos.bank.v1beta1.MsgSend":          {name: "cosmos-sdk/MsgSend"},
 	"/cosmos.gov.v1beta1.MsgSubmitProposal": {name: "cosmos-sdk/MsgSubmitProposal"},
 	"/cosmos.gov.v1beta1.MsgDeposit":        {name: "cosmos-sdk/MsgDeposit"},
@@ -51,6 +58,17 @@ var protoToAminoTypeMap = map[string]aminoType{
 			"/options/option": voteOptionsEnum,
 		},
 	},
+	"/cosmos.staking.v1beta1.MsgCreateValidator": {name: "cosmos-sdk/MsgCreateValidator"},
+	"/cosmos.crypto.secp256k1.PubKey": {
+		name:        "tendermint/PubKeySecp256k1",
+		inlineField: "key",
+	},
+	"/cosmos.crypto.ed25519.PubKey": {
+		name:        "tendermint/PubKeyEd25519",
+		inlineField: "key",
+	},
+
+	// Govgen mapping
 	"/govgen.gov.v1beta1.MsgSubmitProposal": {name: "cosmos-sdk/MsgSubmitProposal"},
 	"/govgen.gov.v1beta1.MsgDeposit":        {name: "cosmos-sdk/MsgDeposit"},
 	"/govgen.gov.v1beta1.MsgVote":           {name: "cosmos-sdk/MsgVote"},
@@ -104,9 +122,19 @@ func _protoToAminoJSON(ctx Context, v any) any {
 			// remove field @type
 			delete(m, "@type")
 			// return pseudo amino
+			var aminoValue any = m
+			if aminoType.inlineField != "" {
+				// if inlineField is provided, then its value replace the aminoValue
+				if aminoValue, ok = m[aminoType.inlineField]; !ok {
+					panic(fmt.Sprintf(
+						"amino type '%s' configured to inline field '%s', but field not found in '%v'",
+						aminoType.name, aminoType.inlineField, m,
+					))
+				}
+			}
 			return map[string]any{
 				"type":  aminoType.name,
-				"value": _protoToAminoJSON(Context{protoType: protoType}, m),
+				"value": _protoToAminoJSON(Context{protoType: protoType}, aminoValue),
 			}
 		}
 		// m has no @type field
