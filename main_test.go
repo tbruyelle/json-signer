@@ -98,7 +98,7 @@ func setupGaiaNode(t *testing.T) node {
 	if err != nil {
 		t.Fatalf("cannot access gaia keyring: %v", err)
 	}
-	n.addrs.val1 = getBech32Addr(t, kr, "val1.info", "cosmos")
+	n.addrs.val1 = getBech32Addr(t, kr, "val1.info", "cosmosvaloper")
 	n.addrs.test1 = getBech32Addr(t, kr, "test1.info", "cosmos")
 	n.addrs.test2 = getBech32Addr(t, kr, "test2.info", "cosmos")
 	return n
