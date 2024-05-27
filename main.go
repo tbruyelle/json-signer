@@ -54,7 +54,11 @@ func listKeysCmd() *ffcli.Command {
 				return nil
 			}
 			for i, key := range keys {
-				fmt.Printf("%d) %s type=%s pubkey=%s\n", i+1, key.Name(), key.Type(), "TODO")
+				encoding := "proto"
+				if key.IsAminoEncoded() {
+					encoding = "amino"
+				}
+				fmt.Printf("%d) %-20s encoding=%s\ttype=%s\tpubkey=%s\n", i+1, key.Name(), encoding, key.Type(), "TODO")
 			}
 			return nil
 		},
