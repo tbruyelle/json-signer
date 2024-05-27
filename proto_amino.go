@@ -26,9 +26,16 @@ var voteOptionsEnum = map[string]int{
 
 // TODO put this in a config file?
 var protoToAminoTypeMap = map[string]aminoType{
-	// cosmos-sdk mapping
-	"/cosmos.bank.v1beta1.MsgSend":          {name: "cosmos-sdk/MsgSend"},
-	"/cosmos.bank.v1beta1.MsgMultiSend":     {name: "cosmos-sdk/MsgMultiSend"},
+	// cosmos-sdk bank module
+	"/cosmos.bank.v1beta1.MsgSend":      {name: "cosmos-sdk/MsgSend"},
+	"/cosmos.bank.v1beta1.MsgMultiSend": {name: "cosmos-sdk/MsgMultiSend"},
+	// cosmos-sdk distribution module
+	"/cosmos.distribution.v1beta1.MsgFundCommunityPool":                    {name: "cosmos-sdk/MsgFundCommunityPool"},
+	"/cosmos.distribution.v1beta1.MsgSetWithdrawAddress":                   {name: "cosmos-sdk/MsgModifyWithdrawAddress"},
+	"/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward":              {name: "cosmos-sdk/MsgWithdrawDelegationReward"},
+	"/cosmos.distribution.v1beta1.MsgWithdrawTokenizeShareRecordReward":    {name: "cosmos-sdk/MsgWithdrawTokenizeReward"},
+	"/cosmos.distribution.v1beta1.MsgWithdrawAllTokenizeShareRecordReward": {name: "cosmos-sdk/MsgWithdrawAllTokenizeReward"},
+	// cosmos-sdk gov module
 	"/cosmos.gov.v1beta1.MsgSubmitProposal": {name: "cosmos-sdk/MsgSubmitProposal"},
 	"/cosmos.gov.v1beta1.MsgDeposit":        {name: "cosmos-sdk/MsgDeposit"},
 	"/cosmos.gov.v1beta1.MsgVote": {
@@ -59,6 +66,7 @@ var protoToAminoTypeMap = map[string]aminoType{
 			"/options/option": voteOptionsEnum,
 		},
 	},
+	// cosmos-sdk staking module
 	"/cosmos.staking.v1beta1.MsgCreateValidator":             {name: "cosmos-sdk/MsgCreateValidator"},
 	"/cosmos.staking.v1beta1.MsgEditValidator":               {name: "cosmos-sdk/MsgEditValidator"},
 	"/cosmos.staking.v1beta1.MsgDelegate":                    {name: "cosmos-sdk/MsgDelegate"},
@@ -72,6 +80,13 @@ var protoToAminoTypeMap = map[string]aminoType{
 	"/cosmos.staking.v1beta1.MsgEnableTokenizeShares":        {name: "cosmos-sdk/MsgEnableTokenizeShares"},
 	"/cosmos.staking.v1beta1.MsgDisableTokenizeShares":       {name: "cosmos-sdk/MsgDisableTokenizeShares"},
 	"/cosmos.staking.v1beta1.MsgRedeemTokensForShares":       {name: "cosmos-sdk/MsgRedeemTokensForShares"},
+	// Govgen gov module
+	"/govgen.gov.v1beta1.MsgSubmitProposal": {name: "cosmos-sdk/MsgSubmitProposal"},
+	"/govgen.gov.v1beta1.MsgDeposit":        {name: "cosmos-sdk/MsgDeposit"},
+	"/govgen.gov.v1beta1.MsgVote":           {name: "cosmos-sdk/MsgVote"},
+	"/govgen.gov.v1beta1.TextProposal":      {name: "cosmos-sdk/TextProposal"},
+
+	// misc mapping
 	"/cosmos.crypto.secp256k1.PubKey": {
 		name:        "tendermint/PubKeySecp256k1",
 		inlineField: "key",
@@ -80,12 +95,6 @@ var protoToAminoTypeMap = map[string]aminoType{
 		name:        "tendermint/PubKeyEd25519",
 		inlineField: "key",
 	},
-
-	// Govgen mapping
-	"/govgen.gov.v1beta1.MsgSubmitProposal": {name: "cosmos-sdk/MsgSubmitProposal"},
-	"/govgen.gov.v1beta1.MsgDeposit":        {name: "cosmos-sdk/MsgDeposit"},
-	"/govgen.gov.v1beta1.MsgVote":           {name: "cosmos-sdk/MsgVote"},
-	"/govgen.gov.v1beta1.TextProposal":      {name: "cosmos-sdk/TextProposal"},
 }
 
 // protoToAminoJSON turns proto json to amino json.
