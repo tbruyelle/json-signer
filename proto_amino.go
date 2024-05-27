@@ -28,6 +28,7 @@ var voteOptionsEnum = map[string]int{
 var protoToAminoTypeMap = map[string]aminoType{
 	// cosmos-sdk mapping
 	"/cosmos.bank.v1beta1.MsgSend":          {name: "cosmos-sdk/MsgSend"},
+	"/cosmos.bank.v1beta1.MsgMultiSend":     {name: "cosmos-sdk/MsgMultiSend"},
 	"/cosmos.gov.v1beta1.MsgSubmitProposal": {name: "cosmos-sdk/MsgSubmitProposal"},
 	"/cosmos.gov.v1beta1.MsgDeposit":        {name: "cosmos-sdk/MsgDeposit"},
 	"/cosmos.gov.v1beta1.MsgVote": {

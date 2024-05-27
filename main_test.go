@@ -46,6 +46,7 @@ func TestE2EGaiaV15(t *testing.T) {
 			env.Setenv("VAL2", gaiaNode.addrs.val2)
 			env.Setenv("TEST1", gaiaNode.addrs.test1)
 			env.Setenv("TEST2", gaiaNode.addrs.test2)
+			env.Setenv("TEST3", gaiaNode.addrs.test3)
 			return nil
 		},
 	})
@@ -60,6 +61,7 @@ type node struct {
 		val2  string
 		test1 string
 		test2 string
+		test3 string
 	}
 }
 
@@ -87,6 +89,7 @@ func setupGaiaNode(t *testing.T) node {
 	n.run(t, "keys", "add", "val2", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "keys", "add", "test1", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "keys", "add", "test2", n.homeFlag(), keyringBackendFlag)
+	n.run(t, "keys", "add", "test3", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "genesis", "add-genesis-account", "val1", "1000000000stake", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "genesis", "add-genesis-account", "test1", "1000000000stake", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "genesis", "add-genesis-account", "test2", "1000000000stake", n.homeFlag(), keyringBackendFlag)
@@ -107,6 +110,7 @@ func setupGaiaNode(t *testing.T) node {
 	n.addrs.val2 = getBech32Addr(t, kr, "val2.info", "cosmosvaloper")
 	n.addrs.test1 = getBech32Addr(t, kr, "test1.info", "cosmos")
 	n.addrs.test2 = getBech32Addr(t, kr, "test2.info", "cosmos")
+	n.addrs.test3 = getBech32Addr(t, kr, "test3.info", "cosmos")
 	return n
 }
 
