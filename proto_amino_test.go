@@ -436,6 +436,23 @@ func TestProtoToAminoJSON(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "rename field",
+			m: map[string]any{
+				"msg": map[string]any{
+					"@type":          "/cosmos.slashing.v1beta1.MsgUnjail",
+					"validator_addr": "xxx",
+				},
+			},
+			expectedAmino: map[string]any{
+				"msg": map[string]any{
+					"type": "cosmos-sdk/MsgUnjail",
+					"value": map[string]any{
+						"address": "xxx",
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

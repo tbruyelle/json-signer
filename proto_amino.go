@@ -7,8 +7,9 @@ import (
 )
 
 type aminoType struct {
-	name  string
-	enums map[string]map[string]int
+	name         string
+	fieldRenames map[string]string         // TODO use struct?
+	enums        map[string]map[string]int // TODO use struct?
 	// If filled, the serialization will inline the named field.
 	// Useful for secp256k1 and ed25519 keys from cosmos-sdk/crypto/keys, for
 	// which the marshalling inlines the Key field instead of an object
@@ -35,6 +36,13 @@ var protoToAminoTypeMap = map[string]aminoType{
 	"/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward":              {name: "cosmos-sdk/MsgWithdrawDelegationReward"},
 	"/cosmos.distribution.v1beta1.MsgWithdrawTokenizeShareRecordReward":    {name: "cosmos-sdk/MsgWithdrawTokenizeReward"},
 	"/cosmos.distribution.v1beta1.MsgWithdrawAllTokenizeShareRecordReward": {name: "cosmos-sdk/MsgWithdrawAllTokenizeReward"},
+	// cosmos-sdk slashing module
+	"/cosmos.slashing.v1beta1.MsgUnjail": {
+		name: "cosmos-sdk/MsgUnjail",
+		fieldRenames: map[string]string{
+			"/validator_addr": "address",
+		},
+	},
 	// cosmos-sdk gov module
 	"/cosmos.gov.v1beta1.MsgSubmitProposal": {name: "cosmos-sdk/MsgSubmitProposal"},
 	"/cosmos.gov.v1beta1.MsgDeposit":        {name: "cosmos-sdk/MsgDeposit"},
@@ -115,13 +123,12 @@ func protoToAminoJSON(v any) (ret any, err error) {
 
 // Context helps to keep track of current protoType and path.
 type Context struct {
-	protoType string
+	aminoType aminoType
 	path      string
 }
 
-// handy method to return a new Context with p appended to c.path.
-func (c Context) appendPath(p string) Context {
-	c.path += "/" + p
+func (c Context) withPath(p string) Context {
+	c.path = p
 	return c
 }
 
@@ -156,7 +163,7 @@ func _protoToAminoJSON(ctx Context, v any) any {
 			}
 			return map[string]any{
 				"type":  aminoType.name,
-				"value": _protoToAminoJSON(Context{protoType: protoType}, aminoValue),
+				"value": _protoToAminoJSON(Context{aminoType: aminoType}, aminoValue),
 			}
 		}
 		// m has no @type field
@@ -167,8 +174,12 @@ func _protoToAminoJSON(ctx Context, v any) any {
 				delete(m, k)
 				continue
 			}
-			// append path
-			m[k] = _protoToAminoJSON(ctx.appendPath(k), v)
+			path := ctx.path + "/" + k
+			if newName, ok := ctx.aminoType.fieldRenames[path]; ok {
+				delete(m, k)
+				k = newName
+			}
+			m[k] = _protoToAminoJSON(ctx.withPath(path), v)
 		}
 		return m
 
@@ -183,16 +194,17 @@ func _protoToAminoJSON(ctx Context, v any) any {
 
 	default:
 		// fmt.Fprintf(os.Stderr, "DEFAULT %s %v\n", ctx.path, v)
-		if aminoType, ok := protoToAminoTypeMap[ctx.protoType]; ok {
-			// map proto enums if some are configured
-			if enumMap, ok := aminoType.enums[ctx.path]; ok {
-				enumVal, ok := enumMap[v.(string)]
-				if !ok {
-					panic(fmt.Sprintf("can't find enum value for type '%s', path '%s' and key '%v'", ctx.protoType, ctx.path, v))
-				}
-				// fmt.Fprintln(os.Stderr, "ENUM", ctx.path, v, enumVal)
-				return enumVal
+		// map proto enums if some are configured
+		if enumMap, ok := ctx.aminoType.enums[ctx.path]; ok {
+			enumVal, ok := enumMap[v.(string)]
+			if !ok {
+				panic(fmt.Sprintf(
+					"can't find enum value for type '%s', path '%s' and key '%v'",
+					ctx.aminoType.name, ctx.path, v,
+				))
 			}
+			// fmt.Fprintln(os.Stderr, "ENUM", ctx.path, v, enumVal)
+			return enumVal
 		}
 		return v
 	}
