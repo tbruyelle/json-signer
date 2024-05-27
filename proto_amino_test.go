@@ -13,14 +13,14 @@ func TestProtoToAminoJSON(t *testing.T) {
 		name          string
 		m             map[string]any
 		expectedAmino map[string]any
-		expectedPanic string
+		expectedError string
 	}{
 		{
 			name: "proto type not found",
 			m: map[string]any{
 				"@type": "xxx",
 			},
-			expectedPanic: "can't find amino type for proto @type='xxx'",
+			expectedError: "can't find amino type for proto @type='xxx'",
 		},
 		{
 			name: "empty fields are omitted",
@@ -426,18 +426,15 @@ func TestProtoToAminoJSON(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require := require.New(t)
 			assert := assert.New(t)
-			if tt.expectedPanic != "" {
-				defer func() {
-					r := recover()
-					if r == nil || r.(string) != tt.expectedPanic {
-						require.Failf("expected panic", "want %q got %q", tt.expectedPanic, r)
-					}
-				}()
-			}
 			orig := fmt.Sprint(tt.m)
 
-			amino := protoToAminoJSON(tt.m)
+			amino, err := protoToAminoJSON(tt.m)
 
+			if tt.expectedError != "" {
+				require.EqualError(err, tt.expectedError)
+				return
+			}
+			require.NoError(err)
 			assert.Equal(tt.expectedAmino, amino)
 			assert.Equal(orig, fmt.Sprint(tt.m), "input parameter has been altered")
 		})

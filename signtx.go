@@ -52,7 +52,11 @@ func getBytesToSign(tx Tx, chainID, account, sequence string) ([]byte, error) {
 	for _, msg := range tx.Body.Messages {
 		// This is the weak part of the program, where proto-json format from msg
 		// is transformed into the amino-json format.
-		bz, err := json.Marshal(protoToAminoJSON(msg))
+		x, err := protoToAminoJSON(msg)
+		if err != nil {
+			return nil, fmt.Errorf("protoToAminoJSON: %v", err)
+		}
+		bz, err := json.Marshal(x)
 		if err != nil {
 			return nil, fmt.Errorf("marshalling aminoMsg: %v", err)
 		}

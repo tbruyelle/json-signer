@@ -63,8 +63,14 @@ var protoToAminoTypeMap = map[string]aminoType{
 // TODO add parameter proto-to-amino map to extend the global map.
 //
 // Contract: should never alter v
-func protoToAminoJSON(v any) any {
-	return _protoToAminoJSON(Context{}, v)
+func protoToAminoJSON(v any) (ret any, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("%v", r)
+		}
+	}()
+	ret = _protoToAminoJSON(Context{}, v)
+	return
 }
 
 // Context helps to keep track of current protoType and path.
