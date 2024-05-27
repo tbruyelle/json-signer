@@ -70,6 +70,7 @@ var protoToAminoTypeMap = map[string]aminoType{
 	"/cosmos.staking.v1beta1.MsgTransferTokenizeShareRecord": {name: "cosmos-sdk/MsgTransferTokenizeRecord"},
 	"/cosmos.staking.v1beta1.MsgEnableTokenizeShares":        {name: "cosmos-sdk/MsgEnableTokenizeShares"},
 	"/cosmos.staking.v1beta1.MsgDisableTokenizeShares":       {name: "cosmos-sdk/MsgDisableTokenizeShares"},
+	"/cosmos.staking.v1beta1.MsgRedeemTokensForShares":       {name: "cosmos-sdk/MsgRedeemTokensForShares"},
 	"/cosmos.crypto.secp256k1.PubKey": {
 		name:        "tendermint/PubKeySecp256k1",
 		inlineField: "key",
