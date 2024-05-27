@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -42,6 +43,7 @@ func TestE2EGaiaV15(t *testing.T) {
 			env.Setenv("GAIA_HOME", gaiaNode.home)
 			env.Setenv("JSONSIGNER", jsonSignerBin)
 			env.Setenv("VAL1", gaiaNode.addrs.val1)
+			env.Setenv("VAL2", gaiaNode.addrs.val2)
 			env.Setenv("TEST1", gaiaNode.addrs.test1)
 			env.Setenv("TEST2", gaiaNode.addrs.test2)
 			return nil
@@ -55,6 +57,7 @@ type node struct {
 	chainID string
 	addrs   struct {
 		val1  string
+		val2  string
 		test1 string
 		test2 string
 	}
@@ -81,11 +84,13 @@ func setupGaiaNode(t *testing.T) node {
 	n.run(t, "init", "gaia-test", n.homeFlag(), "--chain-id="+n.chainID)
 	n.run(t, "config", "chain-id", n.chainID, n.homeFlag())
 	n.run(t, "keys", "add", "val1", n.homeFlag(), keyringBackendFlag)
+	n.run(t, "keys", "add", "val2", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "keys", "add", "test1", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "keys", "add", "test2", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "genesis", "add-genesis-account", "val1", "1000000000stake", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "genesis", "add-genesis-account", "test1", "1000000000stake", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "genesis", "add-genesis-account", "test2", "1000000000stake", n.homeFlag(), keyringBackendFlag)
+	n.run(t, "genesis", "add-genesis-account", "val2", "1000000000stake", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "genesis", "gentx", "val1", "1000000000stake", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "genesis", "collect-gentxs", n.homeFlag())
 
@@ -99,6 +104,7 @@ func setupGaiaNode(t *testing.T) node {
 		t.Fatalf("cannot access gaia keyring: %v", err)
 	}
 	n.addrs.val1 = getBech32Addr(t, kr, "val1.info", "cosmosvaloper")
+	n.addrs.val2 = getBech32Addr(t, kr, "val2.info", "cosmosvaloper")
 	n.addrs.test1 = getBech32Addr(t, kr, "test1.info", "cosmos")
 	n.addrs.test2 = getBech32Addr(t, kr, "test2.info", "cosmos")
 	return n
@@ -122,10 +128,11 @@ func (n node) homeFlag() string {
 
 func (n node) run(t *testing.T, args ...string) {
 	cmd := exec.Command(n.bin, args...)
-	// cmd.Stderr = os.Stderr
-	// cmd.Stdout = os.Stdout
+	var b bytes.Buffer
+	cmd.Stderr = &b
+	cmd.Stdout = &b
 	if err := cmd.Run(); err != nil {
-		t.Fatalf("node running '%s %s': %v", n.bin, strings.Join(args, " "), err)
+		t.Fatalf("node running '%s %s': %v\n%s", n.bin, strings.Join(args, " "), err, b.String())
 	}
 }
 

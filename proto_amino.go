@@ -62,6 +62,7 @@ var protoToAminoTypeMap = map[string]aminoType{
 	"/cosmos.staking.v1beta1.MsgEditValidator":             {name: "cosmos-sdk/MsgEditValidator"},
 	"/cosmos.staking.v1beta1.MsgDelegate":                  {name: "cosmos-sdk/MsgDelegate"},
 	"/cosmos.staking.v1beta1.MsgUndelegate":                {name: "cosmos-sdk/MsgUndelegate"},
+	"/cosmos.staking.v1beta1.MsgBeginRedelegate":           {name: "cosmos-sdk/MsgBeginRedelegate"},
 	"/cosmos.staking.v1beta1.MsgCancelUnbondingDelegation": {name: "cosmos-sdk/MsgCancelUnbondingDelegation"},
 	"/cosmos.crypto.secp256k1.PubKey": {
 		name:        "tendermint/PubKeySecp256k1",
