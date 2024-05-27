@@ -1,0 +1,14 @@
+# Generate tx
+exec $GAIAD tx staking unbond-validator --from=$TEST1 --home=$GAIA_HOME --fees=1000uatom --generate-only --account-number 1 --sequence=0 --gas=100000 --keyring-backend=test
+cp stdout tx.json
+
+# Sign tx
+ttyin -stdin keyring-pwd
+exec $JSONSIGNER sign-tx -from=test1 -keyring-dir=$GAIA_HOME/keyring-test -keyring-backend=file -account=1 -sequence=0 -chain-id=cosmos-dev tx.json
+cp stdout tx-signed.json
+
+# Validate signature
+exec $GAIAD tx validate-signatures tx-signed.json --home=$GAIA_HOME
+
+-- keyring-pwd --
+test
