@@ -1,0 +1,23 @@
+# Generate text proposal tx
+exec $NODE_BIN tx gov submit-proposal --proposal text_proposal.json --from=$TEST1 --home=$NODE_HOME --fees 1000uatom --generate-only --account-number 1 --sequence 0 --gas 100000 --keyring-backend test
+cp stdout tx.json
+
+# Sign tx
+ttyin -stdin keyring-pwd
+exec $JSONSIGNER sign-tx -from=test1 -keyring-dir=$NODE_HOME/keyring-test -keyring-backend file -account=1 -sequence=0 -chain-id=$CHAINID tx.json
+cp stdout tx-signed.json
+
+# Validate signature
+exec $NODE_BIN tx validate-signatures tx-signed.json --home=$NODE_HOME --chain-id=$CHAINID
+
+# TODO: test other kind of proposal
+
+-- keyring-pwd --
+test
+-- text_proposal.json --
+{
+  "deposit": "5000000000ugovgen",
+  "description": "My description",
+  "title": "My title",
+  "type": "Text"
+}

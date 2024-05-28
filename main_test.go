@@ -18,35 +18,42 @@ import (
 )
 
 func TestE2EGaiaV15(t *testing.T) {
+	runE2ETest(t, "testdata/gaiaV15", setupGaiaNode(t))
+}
+
+func TestE2EGovgenV1(t *testing.T) {
+	runE2ETest(t, "testdata/govgenV1", setupGovgenNode(t))
+}
+
+func runE2ETest(t *testing.T, dir string, node node) {
 	jsonSignerBin := filepath.Join(t.TempDir(), "json-signer")
 	// Build json-signer bin
 	err := exec.Command("go", "build", "-o", jsonSignerBin, ".").Run()
 	if err != nil {
 		t.Fatalf("can't build json-signer: %v", err)
 	}
-	gaiaNode := setupGaiaNode(t)
-	gaiaCmd := gaiaNode.start(t)
+	cmd := node.start(t)
 	t.Cleanup(func() {
-		gaiaCmd.Process.Kill()
+		cmd.Process.Kill()
 	})
 
 	testscript.Run(t, testscript.Params{
-		Dir:      "testdata/gaiaV15",
-		TestWork: true,
+		Dir: dir,
 		Setup: func(env *testscript.Env) error {
-			gaiadBin := gaiaNode.bin
-			if alternateBin := os.Getenv("GAIAD"); alternateBin != "" {
-				t.Logf("gaiad bin overrided by env '%s'", alternateBin)
-				gaiadBin = alternateBin
+			nodeBin := node.bin
+			if alternateBin := os.Getenv("NODE_BIN"); alternateBin != "" {
+				t.Logf("'%s' bin overrided by env '%s'", nodeBin, alternateBin)
+				nodeBin = alternateBin
 			}
-			env.Setenv("GAIAD", gaiadBin)
-			env.Setenv("GAIA_HOME", gaiaNode.home)
+			env.Setenv("NODE_BIN", nodeBin)
+			env.Setenv("NODE_HOME", node.home)
+			env.Setenv("CHAINID", node.chainID)
 			env.Setenv("JSONSIGNER", jsonSignerBin)
-			env.Setenv("VAL1", gaiaNode.addrs.val1)
-			env.Setenv("VAL2", gaiaNode.addrs.val2)
-			env.Setenv("TEST1", gaiaNode.addrs.test1)
-			env.Setenv("TEST2", gaiaNode.addrs.test2)
-			env.Setenv("TEST3", gaiaNode.addrs.test3)
+			env.Setenv("VAL1", node.addrs.val1)
+			env.Setenv("VAL2", node.addrs.val2)
+			env.Setenv("TEST1", node.addrs.test1)
+			env.Setenv("TEST2", node.addrs.test2)
+			env.Setenv("TEST3", node.addrs.test3)
 			return nil
 		},
 	})
@@ -65,13 +72,61 @@ type node struct {
 	}
 }
 
-// TODO write generic setupNode with proper params
+func setupGovgenNode(t *testing.T) node {
+	dir := t.TempDir()
+	govgendBin := filepath.Join(dir, "govgend")
+	// Build gaiad bin
+	err := exec.Command("go", "build", "-o", govgendBin,
+		"-modfile=testdeps/govgenV1/go.mod",
+		"github.com/atomone-hub/govgen/cmd/govgend",
+	).Run()
+	if err != nil {
+		t.Fatalf("can't build govgend: %v", err)
+	}
+	n := node{
+		bin:     govgendBin,
+		home:    filepath.Join(dir, "govgen"),
+		chainID: "govgen-dev",
+	}
+	keyringBackendFlag := "--keyring-backend=test"
+	chainIDFlag := "--chain-id=" + n.chainID
+	n.run(t, "init", "govgen-test", n.homeFlag(), chainIDFlag)
+	n.run(t, "config", "chain-id", n.chainID, n.homeFlag())
+	n.run(t, "keys", "add", "val1", n.homeFlag(), keyringBackendFlag)
+	n.run(t, "keys", "add", "val2", n.homeFlag(), keyringBackendFlag)
+	n.run(t, "keys", "add", "test1", n.homeFlag(), keyringBackendFlag)
+	n.run(t, "keys", "add", "test2", n.homeFlag(), keyringBackendFlag)
+	n.run(t, "keys", "add", "test3", n.homeFlag(), keyringBackendFlag)
+	n.run(t, "add-genesis-account", "val1", "1000000000stake", n.homeFlag(), keyringBackendFlag)
+	n.run(t, "add-genesis-account", "test1", "1000000000stake", n.homeFlag(), keyringBackendFlag)
+	n.run(t, "add-genesis-account", "test2", "1000000000stake", n.homeFlag(), keyringBackendFlag)
+	n.run(t, "add-genesis-account", "val2", "1000000000stake", n.homeFlag(), keyringBackendFlag)
+	n.run(t, "gentx", "val1", "1000000000stake", n.homeFlag(), chainIDFlag, keyringBackendFlag)
+	n.run(t, "collect-gentxs", n.homeFlag())
+
+	// fetch bech32 format of created addresses
+	kr, err := keyring.New(
+		keyring.BackendType("file"),
+		filepath.Join(n.home, "keyring-test"),
+		func(_ string) (string, error) { return "test", nil },
+	)
+	if err != nil {
+		t.Fatalf("cannot access gaia keyring: %v", err)
+	}
+	n.addrs.val1 = getBech32Addr(t, kr, "val1.info", "govgenvaloper")
+	n.addrs.val2 = getBech32Addr(t, kr, "val2.info", "govgenvaloper")
+	n.addrs.test1 = getBech32Addr(t, kr, "test1.info", "govgen")
+	n.addrs.test2 = getBech32Addr(t, kr, "test2.info", "govgen")
+	n.addrs.test3 = getBech32Addr(t, kr, "test3.info", "govgen")
+	return n
+}
+
 func setupGaiaNode(t *testing.T) node {
 	dir := t.TempDir()
 	gaiadBin := filepath.Join(dir, "gaiad")
 	// Build gaiad bin
 	err := exec.Command("go", "build", "-o", gaiadBin,
-		"-modfile=testdeps/go.mod",
+		"-modfile=testdeps/gaiaV15/go.mod",
 		"github.com/cosmos/gaia/v15/cmd/gaiad",
 	).Run()
 	if err != nil {

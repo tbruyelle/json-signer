@@ -1,5 +1,5 @@
 # Generate tx
-exec $NODE_BIN tx bank multi-send $TEST1 $TEST2 $TEST3 100000uatom --home=$NODE_HOME --fees 1000uatom --generate-only --account-number 1 --sequence 0 --gas 100000 --keyring-backend test
+exec $NODE_BIN tx bank send $TEST1 $TEST2 100000uatom --home=$NODE_HOME --fees 1000uatom --generate-only --account-number 1 --sequence 0 --gas 100000 --keyring-backend test
 cp stdout tx.json
 
 # Sign tx
@@ -8,7 +8,7 @@ exec $JSONSIGNER sign-tx -from=test1 -keyring-dir=$NODE_HOME/keyring-test -keyri
 cp stdout tx-signed.json
 
 # Validate signature
-exec $NODE_BIN tx validate-signatures tx-signed.json --home=$NODE_HOME
+exec $NODE_BIN tx validate-signatures tx-signed.json --home=$NODE_HOME --chain-id=$CHAINID
 
 -- keyring-pwd --
 test

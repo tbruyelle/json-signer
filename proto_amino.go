@@ -91,8 +91,19 @@ var protoToAminoTypeMap = map[string]aminoType{
 	// Govgen gov module
 	"/govgen.gov.v1beta1.MsgSubmitProposal": {name: "cosmos-sdk/MsgSubmitProposal"},
 	"/govgen.gov.v1beta1.MsgDeposit":        {name: "cosmos-sdk/MsgDeposit"},
-	"/govgen.gov.v1beta1.MsgVote":           {name: "cosmos-sdk/MsgVote"},
-	"/govgen.gov.v1beta1.TextProposal":      {name: "cosmos-sdk/TextProposal"},
+	"/govgen.gov.v1beta1.MsgVote": {
+		name: "cosmos-sdk/MsgVote",
+		enums: map[string]map[string]int{
+			"/option": voteOptionsEnum,
+		},
+	},
+	"/govgen.gov.v1beta1.MsgVoteWeighted": {
+		name: "cosmos-sdk/MsgVoteWeighted",
+		enums: map[string]map[string]int{
+			"/options/option": voteOptionsEnum,
+		},
+	},
+	"/govgen.gov.v1beta1.TextProposal": {name: "cosmos-sdk/TextProposal"},
 
 	// misc mapping
 	"/cosmos.crypto.secp256k1.PubKey": {
@@ -225,6 +236,8 @@ func isEmptyValue(v reflect.Value) bool {
 		return v.Float() == 0
 	case reflect.Interface, reflect.Pointer:
 		return v.IsNil()
+	case reflect.Invalid:
+		return true
 	}
 	return false
 }

@@ -8,7 +8,7 @@ exec $JSONSIGNER sign-tx -from=test1 -keyring-dir=$NODE_HOME/keyring-test -keyri
 cp stdout tx-signed.json
 
 # Validate signature
-exec $NODE_BIN tx validate-signatures tx-signed.json --home=$NODE_HOME
+exec $NODE_BIN tx validate-signatures tx-signed.json --home=$NODE_HOME --chain-id=$CHAINID
 
 -- keyring-pwd --
 test
