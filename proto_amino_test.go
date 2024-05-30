@@ -453,6 +453,33 @@ func TestProtoToAminoJSON(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "allow empty field",
+			m: map[string]any{
+				"msg1": map[string]any{
+					"@type":           "/govgen.gov.v1beta1.MsgSubmitProposal",
+					"initial_deposit": []any{},
+				},
+				"msg2": map[string]any{
+					"@type":           "/cosmos.gov.v1beta1.MsgSubmitProposal",
+					"initial_deposit": []any{},
+				},
+			},
+			expectedAmino: map[string]any{
+				"msg1": map[string]any{
+					"type": "cosmos-sdk/MsgSubmitProposal",
+					"value": map[string]any{
+						"initial_deposit": []any{},
+					},
+				},
+				"msg2": map[string]any{
+					"type": "cosmos-sdk/MsgSubmitProposal",
+					"value": map[string]any{
+						"initial_deposit": []any{},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

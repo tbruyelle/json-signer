@@ -1,10 +1,49 @@
 # Generate text proposal tx
-exec $NODE_BIN tx gov submit-proposal --proposal text_proposal.json --from=$TEST1 --home=$NODE_HOME --fees 1000uatom --generate-only --account-number 1 --sequence 0 --gas 100000 --keyring-backend test
+exec $NODE_BIN tx gov submit-proposal --proposal=text-proposal.json --from=$TEST1 --home=$NODE_HOME --fees=1000uatom --generate-only --account-number=1 --sequence=0 --gas=100000 --keyring-backend=test
 cp stdout tx.json
 
 # Sign tx
 ttyin -stdin keyring-pwd
-exec $JSONSIGNER sign-tx -from=test1 -keyring-dir=$NODE_HOME/keyring-test -keyring-backend file -account=1 -sequence=0 -chain-id=$CHAINID tx.json
+exec $JSONSIGNER sign-tx -from=test1 -keyring-dir=$NODE_HOME/keyring-test -keyring-backend=file -account=1 -sequence=0 -chain-id=$CHAINID tx.json
+cp stdout tx-signed.json
+
+# Validate signature
+exec $NODE_BIN tx validate-signatures tx-signed.json --home=$NODE_HOME --chain-id=$CHAINID
+
+skip # until https://github.com/atomone-hub/govgen/pull/42 is released
+# Generate params-change proposal tx
+exec $NODE_BIN tx gov submit-proposal param-change param-change-proposal.json --from=$TEST1 --home=$NODE_HOME --fees=1000uatom --generate-only --account-number=1 --sequence 0 --gas=100000 --keyring-backend=test
+cp stdout tx.json
+
+# Sign tx
+ttyin -stdin keyring-pwd
+exec $JSONSIGNER sign-tx -from=test1 -keyring-dir=$NODE_HOME/keyring-test -keyring-backend=file -account=1 -sequence=0 -chain-id=$CHAINID tx.json
+cp stdout tx-signed.json
+
+# Validate signature
+exec $NODE_BIN tx validate-signatures tx-signed.json --home=$NODE_HOME --chain-id=$CHAINID
+
+# Generate upgrade-software proposal tx
+exec $NODE_BIN tx gov submit-proposal software-upgrade my-upgrade --title=my-title --description=my-desc --upgrade-height=1 --upgrade-info=my-info --deposit=1000stake --from=$TEST1 --home=$NODE_HOME --fees=1000uatom --generate-only --account-number=1 --sequence=0 --gas=100000 --keyring-backend=test
+cp stdout tx.json
+
+# Sign tx
+ttyin -stdin keyring-pwd
+exec $JSONSIGNER sign-tx -from=test1 -keyring-dir=$NODE_HOME/keyring-test -keyring-backend=file -account=1 -sequence=0 -chain-id=$CHAINID tx.json
+cp stdout tx-signed.json
+
+# Validate signature
+exec $NODE_BIN tx validate-signatures tx-signed.json --home=$NODE_HOME --chain-id=$CHAINID
+
+# Generate cancel-upgrade-software proposal tx
+# NOTE: this one has intentionnaly no --deposit flag to make `initial_deposit`
+# field empty, but still marshalled.
+exec $NODE_BIN tx gov submit-proposal cancel-software-upgrade --title=my-title --description=my-desc --from=$TEST1 --home=$NODE_HOME --fees=1000uatom --generate-only --account-number=1 --sequence=0 --gas=100000 --keyring-backend=test
+cp stdout tx.json
+
+# Sign tx
+ttyin -stdin keyring-pwd
+exec $JSONSIGNER sign-tx -from=test1 -keyring-dir=$NODE_HOME/keyring-test -keyring-backend=file -account=1 -sequence=0 -chain-id=$CHAINID tx.json
 cp stdout tx-signed.json
 
 # Validate signature
@@ -14,10 +53,23 @@ exec $NODE_BIN tx validate-signatures tx-signed.json --home=$NODE_HOME --chain-i
 
 -- keyring-pwd --
 test
--- text_proposal.json --
+-- text-proposal.json --
 {
   "deposit": "5000000000ugovgen",
   "description": "My description",
   "title": "My title",
   "type": "Text"
+}
+-- param-change-proposal.json --
+{
+  "title": "Staking Param Change",
+  "description": "Update max validators",
+  "changes": [
+    {
+      "subspace": "staking",
+      "key": "MaxValidators",
+      "value": 105
+    }
+  ],
+  "deposit": "1000stake"
 }

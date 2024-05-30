@@ -25,6 +25,8 @@ cp stdout tx-signed.json
 # Validate signature
 exec $NODE_BIN tx validate-signatures tx-signed.json --home=$NODE_HOME
 
+# TODO test with other kind of messages
+
 -- keyring-pwd --
 test
 -- prop1.json --

@@ -15,6 +15,9 @@ type aminoType struct {
 	// which the marshalling inlines the Key field instead of an object
 	// containing that Key field.
 	inlineField string
+	// allowEmpty ensures the named field isn't omitted if it's empty (default
+	// behavior)
+	allowEmpty string
 }
 
 var voteOptionsEnum = map[string]int{
@@ -43,9 +46,17 @@ var protoToAminoTypeMap = map[string]aminoType{
 			"/validator_addr": "address",
 		},
 	},
+	// cosmos-sdk params module
+	"/cosmos.params.v1beta1.ParameterChangeProposal": {name: "cosmos-sdk/ParameterChangeProposal"},
+	// cosmos-sdk upgrade module
+	"/cosmos.upgrade.v1beta1.SoftwareUpgradeProposal":       {name: "cosmos-sdk/SoftwareUpgradeProposal"},
+	"/cosmos.upgrade.v1beta1.CancelSoftwareUpgradeProposal": {name: "cosmos-sdk/CancelSoftwareUpgradeProposal"},
 	// cosmos-sdk gov module
-	"/cosmos.gov.v1beta1.MsgSubmitProposal": {name: "cosmos-sdk/MsgSubmitProposal"},
-	"/cosmos.gov.v1beta1.MsgDeposit":        {name: "cosmos-sdk/MsgDeposit"},
+	"/cosmos.gov.v1beta1.MsgSubmitProposal": {
+		name:       "cosmos-sdk/MsgSubmitProposal",
+		allowEmpty: "/initial_deposit",
+	},
+	"/cosmos.gov.v1beta1.MsgDeposit": {name: "cosmos-sdk/MsgDeposit"},
 	"/cosmos.gov.v1beta1.MsgVote": {
 		name: "cosmos-sdk/MsgVote",
 		enums: map[string]map[string]int{
@@ -89,8 +100,11 @@ var protoToAminoTypeMap = map[string]aminoType{
 	"/cosmos.staking.v1beta1.MsgDisableTokenizeShares":       {name: "cosmos-sdk/MsgDisableTokenizeShares"},
 	"/cosmos.staking.v1beta1.MsgRedeemTokensForShares":       {name: "cosmos-sdk/MsgRedeemTokensForShares"},
 	// Govgen gov module
-	"/govgen.gov.v1beta1.MsgSubmitProposal": {name: "cosmos-sdk/MsgSubmitProposal"},
-	"/govgen.gov.v1beta1.MsgDeposit":        {name: "cosmos-sdk/MsgDeposit"},
+	"/govgen.gov.v1beta1.MsgSubmitProposal": {
+		name:       "cosmos-sdk/MsgSubmitProposal",
+		allowEmpty: "/initial_deposit",
+	},
+	"/govgen.gov.v1beta1.MsgDeposit": {name: "cosmos-sdk/MsgDeposit"},
 	"/govgen.gov.v1beta1.MsgVote": {
 		name: "cosmos-sdk/MsgVote",
 		enums: map[string]map[string]int{
@@ -179,13 +193,13 @@ func _protoToAminoJSON(ctx Context, v any) any {
 		}
 		// m has no @type field
 		for k, v := range m {
-			// fmt.Fprintf(os.Stderr, "MAP ITEM %s\n", k)
-			if isEmptyValue(reflect.ValueOf(v)) {
+			path := ctx.path + "/" + k
+			// fmt.Fprintf(os.Stderr, "MAP ITEM path=%s allowempty=%s\n", path, ctx.aminoType.allowEmpty)
+			if isEmptyValue(reflect.ValueOf(v)) && ctx.aminoType.allowEmpty != path {
 				// fmt.Fprintf(os.Stderr, "EMPTY\n")
 				delete(m, k)
 				continue
 			}
-			path := ctx.path + "/" + k
 			if newName, ok := ctx.aminoType.fieldRenames[path]; ok {
 				delete(m, k)
 				k = newName
