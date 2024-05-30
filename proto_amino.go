@@ -18,6 +18,13 @@ type aminoType struct {
 	// allowEmpty ensures the named field isn't omitted if it's empty (default
 	// behavior)
 	allowEmpty string
+	// unregistered indicates the type is not registered in amino, therefore it
+	// should be marshalled as pure JSON.
+	// Useful for some proposals embeded in MsgExecLegacyContent.Content, like
+	// ClientUpdate and ParameterChangeProposal. For some reasons those kinds of
+	// proposals are marshalled in pure JSON in MsgExecLegacyContent.Content,
+	// while it's not the case for other like SoftwareUpgradeProposal.
+	unregistered bool
 }
 
 var voteOptionsEnum = map[string]int{
@@ -33,12 +40,15 @@ var protoToAminoTypeMap = map[string]aminoType{
 	// cosmos-sdk bank module
 	"/cosmos.bank.v1beta1.MsgSend":      {name: "cosmos-sdk/MsgSend"},
 	"/cosmos.bank.v1beta1.MsgMultiSend": {name: "cosmos-sdk/MsgMultiSend"},
+
 	// cosmos-sdk distribution module
+	"/cosmos.distribution.v1beta1.MsgCommunityPoolSpend":                   {name: "cosmos-sdk/distr/MsgCommunityPoolSpend"},
 	"/cosmos.distribution.v1beta1.MsgFundCommunityPool":                    {name: "cosmos-sdk/MsgFundCommunityPool"},
 	"/cosmos.distribution.v1beta1.MsgSetWithdrawAddress":                   {name: "cosmos-sdk/MsgModifyWithdrawAddress"},
 	"/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward":              {name: "cosmos-sdk/MsgWithdrawDelegationReward"},
 	"/cosmos.distribution.v1beta1.MsgWithdrawTokenizeShareRecordReward":    {name: "cosmos-sdk/MsgWithdrawTokenizeReward"},
 	"/cosmos.distribution.v1beta1.MsgWithdrawAllTokenizeShareRecordReward": {name: "cosmos-sdk/MsgWithdrawAllTokenizeReward"},
+
 	// cosmos-sdk slashing module
 	"/cosmos.slashing.v1beta1.MsgUnjail": {
 		name: "cosmos-sdk/MsgUnjail",
@@ -46,11 +56,17 @@ var protoToAminoTypeMap = map[string]aminoType{
 			"/validator_addr": "address",
 		},
 	},
+
+	// ibc module
+	"/ibc.core.client.v1.ClientUpdateProposal": {unregistered: true},
+
 	// cosmos-sdk params module
-	"/cosmos.params.v1beta1.ParameterChangeProposal": {name: "cosmos-sdk/ParameterChangeProposal"},
+	"/cosmos.params.v1beta1.ParameterChangeProposal": {unregistered: true},
+
 	// cosmos-sdk upgrade module
 	"/cosmos.upgrade.v1beta1.SoftwareUpgradeProposal":       {name: "cosmos-sdk/SoftwareUpgradeProposal"},
 	"/cosmos.upgrade.v1beta1.CancelSoftwareUpgradeProposal": {name: "cosmos-sdk/CancelSoftwareUpgradeProposal"},
+
 	// cosmos-sdk gov module
 	"/cosmos.gov.v1beta1.MsgSubmitProposal": {
 		name:       "cosmos-sdk/MsgSubmitProposal",
@@ -69,7 +85,6 @@ var protoToAminoTypeMap = map[string]aminoType{
 			"/options/option": voteOptionsEnum,
 		},
 	},
-	// TODO test other kind of proposal
 	"/cosmos.gov.v1beta1.TextProposal": {name: "cosmos-sdk/TextProposal"},
 	"/cosmos.gov.v1.MsgSubmitProposal": {name: "cosmos-sdk/v1/MsgSubmitProposal"},
 	"/cosmos.gov.v1.MsgDeposit":        {name: "cosmos-sdk/v1/MsgDeposit"},
@@ -85,6 +100,8 @@ var protoToAminoTypeMap = map[string]aminoType{
 			"/options/option": voteOptionsEnum,
 		},
 	},
+	"/cosmos.gov.v1.MsgExecLegacyContent": {name: "cosmos-sdk/v1/MsgExecLegacyContent"},
+
 	// cosmos-sdk staking module
 	"/cosmos.staking.v1beta1.MsgCreateValidator":             {name: "cosmos-sdk/MsgCreateValidator"},
 	"/cosmos.staking.v1beta1.MsgEditValidator":               {name: "cosmos-sdk/MsgEditValidator"},
@@ -99,6 +116,7 @@ var protoToAminoTypeMap = map[string]aminoType{
 	"/cosmos.staking.v1beta1.MsgEnableTokenizeShares":        {name: "cosmos-sdk/MsgEnableTokenizeShares"},
 	"/cosmos.staking.v1beta1.MsgDisableTokenizeShares":       {name: "cosmos-sdk/MsgDisableTokenizeShares"},
 	"/cosmos.staking.v1beta1.MsgRedeemTokensForShares":       {name: "cosmos-sdk/MsgRedeemTokensForShares"},
+
 	// Govgen gov module
 	"/govgen.gov.v1beta1.MsgSubmitProposal": {
 		name:       "cosmos-sdk/MsgSubmitProposal",
@@ -175,6 +193,10 @@ func _protoToAminoJSON(ctx Context, v any) any {
 			// fmt.Fprintf(os.Stderr, "@TYPE %v %v\n", typ, aminoType)
 			// remove field @type
 			delete(m, "@type")
+			if aminoType.unregistered {
+				// marshal as standard JSON
+				return _protoToAminoJSON(ctx, m)
+			}
 			// return pseudo amino
 			var aminoValue any = m
 			if aminoType.inlineField != "" {

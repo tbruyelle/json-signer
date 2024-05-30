@@ -480,6 +480,26 @@ func TestProtoToAminoJSON(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "unregistered",
+			m: map[string]any{
+				"msg": map[string]any{
+					"@type": "/ibc.core.client.v1.ClientUpdateProposal",
+					"a":     1,
+					"b": map[string]any{
+						"c": "str",
+					},
+				},
+			},
+			expectedAmino: map[string]any{
+				"msg": map[string]any{
+					"a": 1,
+					"b": map[string]any{
+						"c": "str",
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
