@@ -106,7 +106,6 @@ type Tx struct {
 }
 
 type Body struct {
-	// TODO use []any?
 	Messages      []map[string]any `json:"messages"`
 	Memo          string           `json:"memo"`
 	TimeoutHeight string           `json:"timeout_height"`

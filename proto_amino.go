@@ -8,8 +8,8 @@ import (
 
 type aminoType struct {
 	name         string
-	fieldRenames map[string]string         // TODO use struct?
-	enums        map[string]map[string]int // TODO use struct?
+	fieldRenames map[string]string
+	enums        map[string]map[string]int
 	// If filled, the serialization will inline the named field.
 	// Useful for secp256k1 and ed25519 keys from cosmos-sdk/crypto/keys, for
 	// which the marshalling inlines the Key field instead of an object

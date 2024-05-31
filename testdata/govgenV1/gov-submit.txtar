@@ -49,8 +49,6 @@ cp stdout tx-signed.json
 # Validate signature
 exec $NODE_BIN tx validate-signatures tx-signed.json --home=$NODE_HOME --chain-id=$CHAINID
 
-# TODO: test other kind of proposal
-
 -- keyring-pwd --
 test
 -- text-proposal.json --

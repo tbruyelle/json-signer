@@ -32,6 +32,7 @@ func listKeysCmd() *ffcli.Command {
 	fs := flag.NewFlagSet("list-keys", flag.ContinueOnError)
 	keyringDir := fs.String("keyring-dir", "", "Keyring directory")
 	keyringBackend := fs.String("keyring-backend", "", "Keyring backend, which can be one of 'keychain' (macos), 'pass', 'kwallet' (linux), or 'file'")
+	prefix := fs.String("prefix", "cosmos", "Bech32 address prefix")
 	return &ffcli.Command{
 		Name:       "list-keys",
 		ShortUsage: "json-signer list-keys --keyring-backend <keychain|pass|kwallet|file> --keyring-dir <dir>",
@@ -45,22 +46,7 @@ func listKeysCmd() *ffcli.Command {
 			if err != nil {
 				return err
 			}
-			keys, err := kr.Keys()
-			if err != nil {
-				return err
-			}
-			if len(keys) == 0 {
-				fmt.Println("No keys found in keyring")
-				return nil
-			}
-			for i, key := range keys {
-				encoding := "proto"
-				if key.IsAminoEncoded() {
-					encoding = "amino"
-				}
-				fmt.Printf("%d) %-20s encoding=%s\ttype=%s\tpubkey=%s\n", i+1, key.Name(), encoding, key.Type(), "TODO")
-			}
-			return nil
+			return PrintKeys(os.Stdout, kr, *prefix)
 		},
 	}
 }
@@ -98,7 +84,6 @@ func signTxCmd() *ffcli.Command {
 				return err
 			}
 
-			// TODO test with ledger
 			signedTx, bytesToSign, err := signTx(tx, kr, *signer, *chainID, *account, *sequence)
 			if err != nil {
 				return err

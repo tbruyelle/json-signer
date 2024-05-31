@@ -8,7 +8,7 @@ require (
 	github.com/rogpeppe/go-internal v1.12.0
 	github.com/stretchr/testify v1.9.0
 	github.com/tbruyelle/keyring-compat v0.0.0-20240520164718-f9c1db0bd3f2
-	golang.org/x/exp v0.0.0-20240404231335-c0f41cb1a7a0
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 replace github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
@@ -102,6 +102,7 @@ require (
 	github.com/zondax/ledger-go v0.14.3 // indirect
 	go.etcd.io/bbolt v1.3.8 // indirect
 	golang.org/x/crypto v0.22.0 // indirect
+	golang.org/x/exp v0.0.0-20240404231335-c0f41cb1a7a0 // indirect
 	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/sys v0.19.0 // indirect
 	golang.org/x/term v0.19.0 // indirect
