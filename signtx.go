@@ -50,8 +50,6 @@ func signTx(tx Tx, kr keyring.Keyring, signer, chainID, account, sequence string
 func getBytesToSign(tx Tx, chainID, account, sequence string) ([]byte, error) {
 	msgsBytes := make([]json.RawMessage, 0, len(tx.Body.Messages))
 	for _, msg := range tx.Body.Messages {
-		// This is the weak part of the program, where proto-json format from msg
-		// is transformed into the amino-json format.
 		x, err := protoToAminoJSON(msg)
 		if err != nil {
 			return nil, fmt.Errorf("protoToAminoJSON: %v", err)
