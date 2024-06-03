@@ -2,21 +2,21 @@
 
 Sign any cosmos transaction using the amino-json sign mode.
 
-In the context of offline signing, it's preferable to rely on a single tool to
-sign your transaction, instead of the blockchain binary itself, which is often
-updated and not always audited on time. `json-signer` embraces this and aims to
-deliver an audited tool that is able to sign any cosmos-sdk transaction.
+It is preferable to rely on a single tool to sign your transaction, instead of
+the blockchain binary itself, which is often updated and not always audited on
+time. `json-signer` embraces this and aims to deliver an audited tool that is
+able to sign any cosmos-sdk transaction.
 
 ## Example using gaia
+
+> [!NOTE]
+> This example follows the procedure described in this [guide], please refer to
+> it for more details.
 
 In this example, there is an online computer and an offline computer. For
 security reasons, only the offline computer contains the private key.
 
 Let us create a transaction using the `gaiad` binary on the online computer:
-
-> [!NOTE]
-> This example follows the procedure described in this [guide], please refer to
-> it for more details.
 
 ```sh
 $ gaiad tx bank send [addr1] [addr2] 100000uatom --chain-id cosmoshub-4 \
@@ -29,7 +29,7 @@ must be copied to the offline computer.
 
 From the offline computer, use `json-signer` to sign the tx:
 
-``sh
+```sh
 $ json-signer sign-tx --from=addr1 --keyring-dir=~/.gaia --account=12345 \
     --sequence=123 --chain-id=cosmoshub-4 tx.json > tx-signed.json
 ```
@@ -95,7 +95,7 @@ while it's impossible with the direct sign-mode because it requires the
 }
 ```
 Extracted bytes-to-sign:
-```
+```json
 {
   "account_number": "682802",
   "chain_id": "cosmoshub-4",
@@ -130,7 +130,7 @@ Extracted bytes-to-sign:
 
 ## Keyring
 
-`json-signer` also uses a alternate [`keyring`] package that is able to read
+`json-signer` also uses a alternate [keyring] package that is able to read
 a keyring, whether the keys are amino or proto encoded (before cosmos-sdk 0.46,
 the keyring was amino encoded, then it has been migrated to protobuf encoding).
 
