@@ -121,6 +121,38 @@ type Fee struct {
 	Granter  string `json:"granter,omitempty"`
 }
 
+func (tx Tx) GetSignaturesData() (SignaturesData, error) {
+	if len(tx.Signatures) == 0 {
+		return SignaturesData{}, fmt.Errorf("cannot call GetSignaturesData() on unsigned tx")
+	}
+	var sigsData []SignatureData
+	for i, signerInfo := range tx.AuthInfo.SignerInfos {
+		sigData := SignatureData{
+			PublicKey: signerInfo.PublicKey,
+			Sequence:  signerInfo.Sequence,
+		}
+		sigData.Data.Single.Mode = signModeAminoJSON
+		sigData.Data.Single.Signature = tx.Signatures[i]
+		sigsData = append(sigsData, sigData)
+	}
+	return SignaturesData{sigsData}, nil
+}
+
+type SignaturesData struct {
+	Signatures []SignatureData `json:"signatures"`
+}
+
+type SignatureData struct {
+	PublicKey any `json:"public_key"` // TODO improve typing
+	Data      struct {
+		Single struct {
+			Mode      string `json:"mode"`
+			Signature []byte `json:"signature"`
+		} `json:"single"`
+	} `json:"data"`
+	Sequence string `json:"sequence"`
+}
+
 // FeeToSign is the same as Fee except for the Gas field which must outputs as
 // `gas` instead of `gas_limit` in the JSON format.
 type FeeToSign struct {
@@ -145,7 +177,7 @@ type Coin struct {
 }
 
 type SignerInfo struct {
-	PublicKey any      `json:"public_key"`
+	PublicKey any      `json:"public_key"` // TODO improve typing
 	ModeInfo  ModeInfo `json:"mode_info"`
 	Sequence  string   `json:"sequence"`
 }

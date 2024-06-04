@@ -437,8 +437,8 @@ github.com/subosito/gotenv v1.6.0 h1:9NlTDc1FTs4qu0DDq7AEtTPNw6SVm7uBMsUCUjABIf8
 github.com/subosito/gotenv v1.6.0/go.mod h1:Dk4QP5c2W3ibzajGcXpNraDfq2IrhjMIvMSWPKKo0FU=
 github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d h1:vfofYNRScrDdvS342BElfbETmL1Aiz3i2t0zfRj16Hs=
 github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d/go.mod h1:RRCYJbIwD5jmqPI9XoAFR0OcDxqUctll6zUj/+B4S48=
-github.com/tbruyelle/keyring-compat v0.0.0-20240520164718-f9c1db0bd3f2 h1:5QCkKOivCRFxR40A01E58liRJgsn4Aiz6RWrXOiTQjQ=
-github.com/tbruyelle/keyring-compat v0.0.0-20240520164718-f9c1db0bd3f2/go.mod h1:6sYxpmLN/hSkF5V/7AbwfxD6+nR0t/AeL1OIaY6ZFX4=
+github.com/tbruyelle/keyring-compat v0.0.0-20240604194340-3767ec1bb8b5 h1:XFoyx+sGUE6C9yo3WFwACexixA2pCHGkWJlRW33oQoo=
+github.com/tbruyelle/keyring-compat v0.0.0-20240604194340-3767ec1bb8b5/go.mod h1:6sYxpmLN/hSkF5V/7AbwfxD6+nR0t/AeL1OIaY6ZFX4=
 github.com/tendermint/go-amino v0.16.0 h1:GyhmgQKvqF82e2oZeuMSp9JTN0N09emoSZlb2lyGa2E=
 github.com/tendermint/go-amino v0.16.0/go.mod h1:TQU0M1i/ImAo+tYpZi73AU3V/dKeCoMC9Sphe2ZwGME=
 github.com/tidwall/btree v1.7.0 h1:L1fkJH/AuEh5zBnnBbmTwQ5Lt+bRJ5A8EWecslvo9iI=

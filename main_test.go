@@ -54,6 +54,7 @@ func runE2ETest(t *testing.T, dir string, node node) {
 			env.Setenv("TEST1", node.addrs.test1)
 			env.Setenv("TEST2", node.addrs.test2)
 			env.Setenv("TEST3", node.addrs.test3)
+			env.Setenv("MULTISIG", node.addrs.multisig)
 			return nil
 		},
 	})
@@ -64,11 +65,12 @@ type node struct {
 	home    string
 	chainID string
 	addrs   struct {
-		val1  string
-		val2  string
-		test1 string
-		test2 string
-		test3 string
+		val1     string
+		val2     string
+		test1    string
+		test2    string
+		test3    string
+		multisig string
 	}
 }
 
@@ -97,10 +99,12 @@ func setupGovgenNode(t *testing.T) node {
 	n.run(t, "keys", "add", "test1", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "keys", "add", "test2", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "keys", "add", "test3", n.homeFlag(), keyringBackendFlag)
+	n.run(t, "keys", "add", "test1-test2-multisig", "--multisig=test1,test2", "--multisig-threshold=2", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "add-genesis-account", "val1", "1000000000stake", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "add-genesis-account", "test1", "1000000000stake", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "add-genesis-account", "test2", "1000000000stake", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "add-genesis-account", "val2", "1000000000stake", n.homeFlag(), keyringBackendFlag)
+	n.run(t, "add-genesis-account", "test1-test2-multisig", "1000000000stake", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "gentx", "val1", "1000000000stake", n.homeFlag(), chainIDFlag, keyringBackendFlag)
 	n.run(t, "collect-gentxs", n.homeFlag())
 
@@ -118,6 +122,7 @@ func setupGovgenNode(t *testing.T) node {
 	n.addrs.test1 = getBech32Addr(t, kr, "test1.info", "govgen")
 	n.addrs.test2 = getBech32Addr(t, kr, "test2.info", "govgen")
 	n.addrs.test3 = getBech32Addr(t, kr, "test3.info", "govgen")
+	n.addrs.multisig = getBech32Addr(t, kr, "test1-test2-multisig.info", "govgen")
 	return n
 }
 
@@ -145,10 +150,12 @@ func setupGaiaNode(t *testing.T) node {
 	n.run(t, "keys", "add", "test1", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "keys", "add", "test2", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "keys", "add", "test3", n.homeFlag(), keyringBackendFlag)
+	n.run(t, "keys", "add", "test1-test2-multisig", "--multisig=test1,test2", "--multisig-threshold=2", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "genesis", "add-genesis-account", "val1", "1000000000stake", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "genesis", "add-genesis-account", "test1", "1000000000stake", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "genesis", "add-genesis-account", "test2", "1000000000stake", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "genesis", "add-genesis-account", "val2", "1000000000stake", n.homeFlag(), keyringBackendFlag)
+	n.run(t, "genesis", "add-genesis-account", "test1-test2-multisig", "1000000000stake", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "genesis", "gentx", "val1", "1000000000stake", n.homeFlag(), keyringBackendFlag)
 	n.run(t, "genesis", "collect-gentxs", n.homeFlag())
 
@@ -166,6 +173,7 @@ func setupGaiaNode(t *testing.T) node {
 	n.addrs.test1 = getBech32Addr(t, kr, "test1.info", "cosmos")
 	n.addrs.test2 = getBech32Addr(t, kr, "test2.info", "cosmos")
 	n.addrs.test3 = getBech32Addr(t, kr, "test3.info", "cosmos")
+	n.addrs.multisig = getBech32Addr(t, kr, "test1-test2-multisig.info", "cosmos")
 	return n
 }
 

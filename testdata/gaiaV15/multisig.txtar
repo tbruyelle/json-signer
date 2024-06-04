@@ -1,0 +1,24 @@
+# Generate tx
+exec $NODE_BIN tx bank send $MULTISIG $TEST3 100000uatom --home=$NODE_HOME --fees=1000uatom --generate-only --account-number=4 --sequence=0 --gas=100000 --keyring-backend=test
+cp stdout tx.json
+
+# Sign tx with test1
+ttyin -stdin keyring-pwd
+exec $JSONSIGNER sign-tx -from=test1 -signature-only -keyring-dir=$NODE_HOME/keyring-test -keyring-backend=file -account=4 -sequence=0 -chain-id=$CHAINID tx.json
+cp stdout tx-test1-signature.json
+
+# Sign tx with test2
+ttyin -stdin keyring-pwd
+exec $JSONSIGNER sign-tx -from=test2 -signature-only -keyring-dir=$NODE_HOME/keyring-test -keyring-backend=file -account=4 -sequence=0 -chain-id=$CHAINID tx.json
+cp stdout tx-test2-signature.json
+
+# Sign tx with test1-test2-multisig (using node binary)
+# TODO ensure multisig is only a bunch of pubkeys
+exec $NODE_BIN tx multi-sign tx.json test1-test2-multisig tx-test1-signature.json tx-test2-signature.json --home=$NODE_HOME --keyring-backend=test
+cp stdout tx-multisigned.json
+
+# Validate signature
+exec $NODE_BIN tx validate-signatures tx-multisigned.json --home=$NODE_HOME
+
+-- keyring-pwd --
+test

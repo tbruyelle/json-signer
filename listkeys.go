@@ -23,7 +23,7 @@ type keyOutput struct {
 func PrintKeys(w io.Writer, kr keyring.Keyring, prefix string) error {
 	keys, err := kr.Keys()
 	if err != nil {
-		return err
+		return fmt.Errorf("read keyring keys: %w", err)
 	}
 	var list []keyOutput
 	for _, key := range keys {
@@ -46,7 +46,7 @@ func PrintKeys(w io.Writer, kr keyring.Keyring, prefix string) error {
 		}
 		bz, err := codec.ProtoMarshalJSON(apk, nil)
 		if err != nil {
-			return err
+			return fmt.Errorf("ProtoMarshalJSON: %w", err)
 		}
 		list = append(list, keyOutput{
 			Name:     key.Name(),

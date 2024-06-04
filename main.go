@@ -59,6 +59,7 @@ func signTxCmd() *ffcli.Command {
 	chainID := fs.String("chain-id", "", "Chain identifier")
 	account := fs.String("account", "", "Account number")
 	sequence := fs.String("sequence", "", "Sequence number")
+	sigOnly := fs.Bool("signature-only", false, "Outputs only the signature data")
 	return &ffcli.Command{
 		Name:       "sign-tx",
 		ShortUsage: "json-signer sign-tx --from <key> --keyring-dir <dir> --chain-id <chainID> --sequence <sequence> --account <account> <tx.json>",
@@ -90,12 +91,25 @@ func signTxCmd() *ffcli.Command {
 			}
 			fmt.Fprintf(os.Stderr, "Bytes to sign:\n%s\n", string(bytesToSign))
 
-			// Output tx
-			bz, err := json.MarshalIndent(signedTx, "", "  ")
-			if err != nil {
-				return err
+			if !*sigOnly {
+				// Output tx
+				bz, err := json.Marshal(signedTx)
+				if err != nil {
+					return err
+				}
+				fmt.Println(string(bz))
+			} else {
+				// Output signature only
+				sigsData, err := signedTx.GetSignaturesData()
+				if err != nil {
+					return err
+				}
+				bz, err := json.Marshal(sigsData)
+				if err != nil {
+					return err
+				}
+				fmt.Println(string(bz))
 			}
-			fmt.Println(string(bz))
 			return nil
 		},
 	}
