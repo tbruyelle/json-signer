@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
@@ -23,8 +22,9 @@ func main() {
 		},
 	}
 	err := rootCmd.ParseAndRun(context.Background(), os.Args[1:])
-	if err != nil && err != flag.ErrHelp {
-		log.Fatal(err)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
 	}
 }
 
