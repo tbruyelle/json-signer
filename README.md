@@ -7,6 +7,8 @@ the blockchain binary itself, which is often updated and not always audited on
 time. `json-signer` embraces this and aims to deliver an audited tool that is
 able to sign any cosmos-sdk transaction.
 
+TODO: explain how `-keyring-backend` flag differs from cosmos-sdk CLI.
+
 ## Example using gaia
 
 > [!NOTE]
@@ -30,8 +32,9 @@ must be copied to the offline computer.
 From the offline computer, use `json-signer` to sign the tx:
 
 ```sh
-$ json-signer sign-tx --from=addr1 --keyring-dir=~/.gaia --account=12345 \
-    --sequence=123 --chain-id=cosmoshub-4 tx.json > tx-signed.json
+$ json-signer sign-tx --from=addr1 --keyring-dir=~/.gaia --keyring-backend=file \
+    --account=12345 --sequence=123 --chain-id=cosmoshub-4 tx.json \
+    > tx-signed.json
 ```
 
 Copy `tx-signed.json` to the online computer. You can validate the signature by
@@ -70,7 +73,8 @@ $ gaiad tx bank send [bob-alice-addr] [other-addr] 100000uatom \
 From the offline computer, use `json-signer` to sign the tx with `bob`:
 
 ```sh
-$ json-signer sign-tx --from=bob --signature-only --keyring-dir=~/.gaia \
+$ json-signer sign-tx --from=bob --signature-only \
+    --keyring-dir=~/.gaia --keyring-backend=file \
     --account=12345 --sequence=123 --chain-id=cosmoshub-4 tx.json \
     > tx-bob-signature.json
 ```
@@ -78,7 +82,8 @@ $ json-signer sign-tx --from=bob --signature-only --keyring-dir=~/.gaia \
 Similarly, let's create the signature for the `alice` account:
 
 ```sh
-$ json-signer sign-tx --from=alice --signature-only --keyring-dir=~/.gaia \
+$ json-signer sign-tx --from=alice --signature-only \
+    --keyring-dir=~/.gaia --keyring-backend=file \
     --account=12345 --sequence=123 --chain-id=cosmoshub-4 tx.json \
     > tx-alice-signature.json
 ```
