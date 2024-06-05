@@ -37,6 +37,10 @@ $ json-signer sign-tx --from=addr1 --keyring-dir=~/.gaia --keyring-backend=file 
     > tx-signed.json
 ```
 
+> [!NOTE]
+> This command assumes that the keyring backend is `file` and is stored in the
+> `~/.gaia` directory. Adjust the `--keyring-backend` flag to your needs.
+
 Copy `tx-signed.json` to the online computer. You can validate the signature by
 running:
 
