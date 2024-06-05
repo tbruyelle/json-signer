@@ -91,25 +91,19 @@ func signTxCmd() *ffcli.Command {
 			}
 			fmt.Fprintf(os.Stderr, "Bytes to sign:\n%s\n", string(bytesToSign))
 
-			if !*sigOnly {
-				// Output tx
-				bz, err := json.Marshal(signedTx)
-				if err != nil {
-					return err
-				}
-				fmt.Println(string(bz))
-			} else {
+			var output any = signedTx
+			if *sigOnly {
 				// Output signature only
-				sigsData, err := signedTx.GetSignaturesData()
+				output, err = signedTx.GetSignaturesData()
 				if err != nil {
 					return err
 				}
-				bz, err := json.Marshal(sigsData)
-				if err != nil {
-					return err
-				}
-				fmt.Println(string(bz))
 			}
+			bz, err := json.Marshal(output)
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(bz))
 			return nil
 		},
 	}
