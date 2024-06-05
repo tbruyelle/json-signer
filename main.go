@@ -70,11 +70,13 @@ func signTxCmd() *ffcli.Command {
 				return err
 			}
 			if fs.NArg() != 1 ||
-				fs.Lookup("keyring-dir") == nil || // FIXME not mandatory for backend than file
 				fs.Lookup("keyring-backend") == nil ||
 				fs.Lookup("from") == nil || fs.Lookup("sequence") == nil ||
 				fs.Lookup("account") == nil || fs.Lookup("chain-id") == nil {
 				return flag.ErrHelp
+			}
+			if *keyringBackend == "file" && fs.Lookup("keyring-dir") == nil {
+				return fmt.Errorf("--keyring-backend=file requires --keyring-dir flag")
 			}
 			tx, err := readTxFile(fs.Arg(0))
 			if err != nil {
