@@ -10,7 +10,7 @@ cp stdout tx-signed.json
 # Validate signature
 exec $NODE_BIN tx validate-signatures tx-signed.json --home=$NODE_HOME --chain-id=$CHAINID
 
-skip # until https://github.com/atomone-hub/govgen/pull/42 is released
+skip # TODO remove when https://github.com/atomone-hub/govgen/pull/42 is released
 # Generate params-change proposal tx
 exec $NODE_BIN tx gov submit-proposal param-change param-change-proposal.json --from=$TEST1 --home=$NODE_HOME --fees=1000uatom --generate-only --account-number=1 --sequence 0 --gas=100000 --keyring-backend=test
 cp stdout tx.json

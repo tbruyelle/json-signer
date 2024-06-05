@@ -1,5 +1,5 @@
 # Generate vote tx
-skip # until https://github.com/cosmos/cosmos-sdk/pull/20463 is released
+skip # TODO remove when https://github.com/cosmos/cosmos-sdk/pull/20463 is released
 exec $NODE_BIN tx distribution withdraw-tokenize-share-rewards 2 --from=$TEST1 --home=$NODE_HOME --fees=1000uatom --generate-only --account-number 1 --sequence=0 --gas=100000 --keyring-backend=test
 cp stdout tx.json
 
