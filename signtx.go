@@ -121,21 +121,20 @@ type Fee struct {
 	Granter  string `json:"granter,omitempty"`
 }
 
-func (tx Tx) GetSignaturesData() (SignaturesData, error) {
-	if len(tx.Signatures) == 0 {
-		return SignaturesData{}, fmt.Errorf("cannot call GetSignaturesData() on unsigned tx")
-	}
-	var sigsData []SignatureData
+func (tx Tx) GetSignaturesData() (s SignaturesData) {
 	for i, signerInfo := range tx.AuthInfo.SignerInfos {
-		sigData := SignatureData{
+		s.Signatures = append(s.Signatures, SignatureData{
 			PublicKey: signerInfo.PublicKey,
-			Sequence:  signerInfo.Sequence,
-		}
-		sigData.Data.Single.Mode = signModeAminoJSON
-		sigData.Data.Single.Signature = tx.Signatures[i]
-		sigsData = append(sigsData, sigData)
+			Data: ModeInfo{
+				Single: Single{
+					Mode:      signModeAminoJSON,
+					Signature: tx.Signatures[i],
+				},
+			},
+			Sequence: signerInfo.Sequence,
+		})
 	}
-	return SignaturesData{sigsData}, nil
+	return
 }
 
 type SignaturesData struct {
@@ -143,14 +142,9 @@ type SignaturesData struct {
 }
 
 type SignatureData struct {
-	PublicKey any `json:"public_key"` // TODO improve typing
-	Data      struct {
-		Single struct {
-			Mode      string `json:"mode"`
-			Signature []byte `json:"signature"`
-		} `json:"single"`
-	} `json:"data"`
-	Sequence string `json:"sequence"`
+	PublicKey any      `json:"public_key"` // TODO improve typing
+	Data      ModeInfo `json:"data"`
+	Sequence  string   `json:"sequence"`
 }
 
 // FeeToSign is the same as Fee except for the Gas field which must outputs as
@@ -187,7 +181,8 @@ type ModeInfo struct {
 }
 
 type Single struct {
-	Mode string `json:"mode"`
+	Mode      string `json:"mode"`
+	Signature []byte `json:"signature,omitempty"`
 }
 
 type SignDoc struct {

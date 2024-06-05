@@ -94,10 +94,7 @@ func signTxCmd() *ffcli.Command {
 			var output any = signedTx
 			if *sigOnly {
 				// Output signature only
-				output, err = signedTx.GetSignaturesData()
-				if err != nil {
-					return err
-				}
+				output = signedTx.GetSignaturesData()
 			}
 			bz, err := json.Marshal(output)
 			if err != nil {
