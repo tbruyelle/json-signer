@@ -50,6 +50,57 @@ $ gaiad tx broadcast tx-signed.json
 Congratulations, your transaction should be on its way to be executed on the
 chain.
 
+## Example with multisig account
+
+`json-signer` supports signing transaction with multisig accounts. The
+procedure is quite similar as signing with standard accounts, with just a few
+changes in the flags.
+
+Let's take `bob` and `alice` as two standard accounts, and `bob-alice` as a
+multisig account between `bob` and `alice`.
+
+Let's first generate the transaction with the blockchain binary:
+
+```sh
+$ gaiad tx bank send [bob-alice-addr] [other-addr] 100000uatom \
+    --chain-id cosmoshub-4 --fees 1000uatom --account-number 12345 \
+    --sequence 123 --gas auto --generate-only > tx.json
+```
+
+From the offline computer, use `json-signer` to sign the tx with `bob`:
+
+```sh
+$ json-signer sign-tx --from=bob --signature-only --keyring-dir=~/.gaia \
+    --account=12345 --sequence=123 --chain-id=cosmoshub-4 tx.json \
+    > tx-bob-signature.json
+```
+
+Similarly, let's create the signature for the `alice` account:
+
+```sh
+$ json-signer sign-tx --from=alice --signature-only --keyring-dir=~/.gaia \
+    --account=12345 --sequence=123 --chain-id=cosmoshub-4 tx.json \
+    > tx-alice-signature.json
+```
+
+> [!WARNING]
+> - the `account-number` and `sequence` belong to the `bob-alice` multisig
+>   account.
+> - the `--signature-only` flag is necessary for `json-signer` to output only
+>   the signature of the tx, which is needed for the next steps.
+
+Once `tx-bob-signature.json` and `tx-alice-signature.json` files are ready,
+let's copy them to the online computer and use the blockchain binary to
+generate the final transaction:
+
+```sh
+$ gaiad tx multi-sign tx.json bob-alice tx-bob-signature.json tx-alice-signature.json \
+  > tx-signed.json
+```
+
+The generated file `tx-signed.json` is multi-signed and ready to be
+broadcasted.
+ 
 ## Why amino-json
 
 Amino-json allows to build the bytes-to-sign without the needs for protobuf

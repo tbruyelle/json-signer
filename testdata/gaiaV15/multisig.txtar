@@ -13,7 +13,6 @@ exec $JSONSIGNER sign-tx -from=test2 -signature-only -keyring-dir=$NODE_HOME/key
 cp stdout tx-test2-signature.json
 
 # Sign tx with test1-test2-multisig (using node binary)
-# TODO ensure multisig is only a bunch of pubkeys
 exec $NODE_BIN tx multi-sign tx.json test1-test2-multisig tx-test1-signature.json tx-test2-signature.json --home=$NODE_HOME --keyring-backend=test
 cp stdout tx-multisigned.json
 
