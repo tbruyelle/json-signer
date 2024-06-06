@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tbruyelle/keyring-compat"
 
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -74,7 +73,12 @@ func TestSignTx(t *testing.T) {
 	)
 	record, err := cosmoskeyring.NewLocalRecord("local", privkey, pubkey)
 	require.NoError(t, err)
-	kr.AddProto("local.info", record)
+	err = kr.AddProto("local.info", record)
+	require.NoError(t, err)
+	key, err := kr.Get("local.info")
+	require.NoError(t, err)
+	pubKeyBz, err := key.ProtoJSONPubKey()
+	require.NoError(t, err)
 	bankSendTx := Tx{
 		Body: Body{
 			Messages: []map[string]any{{
@@ -111,10 +115,7 @@ func TestSignTx(t *testing.T) {
 			keyname: "local",
 			tx:      bankSendTx,
 			expectedSignerInfos: []SignerInfo{{
-				PublicKey: map[string]any{
-					"@type": codectypes.MsgTypeURL(pubkey),
-					"key":   pubkey.Bytes(),
-				},
+				PublicKey: pubKeyBz,
 				ModeInfo: ModeInfo{
 					Single: Single{
 						Mode: signModeAminoJSON,

@@ -6,10 +6,6 @@ import (
 
 	"github.com/tbruyelle/keyring-compat"
 	"gopkg.in/yaml.v2"
-
-	"github.com/cosmos/cosmos-sdk/codec"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	"github.com/cosmos/cosmos-sdk/types/bech32"
 )
 
 type keyOutput struct {
@@ -31,22 +27,13 @@ func PrintKeys(w io.Writer, kr keyring.Keyring, prefix string) error {
 		if key.IsAminoEncoded() {
 			encoding = "amino"
 		}
-		pk, err := key.PubKey()
+		addr, err := key.Bech32Address(prefix)
 		if err != nil {
-			return err
+			return fmt.Errorf("key.Bech32Address: %w", err)
 		}
-		addr, err := bech32.ConvertAndEncode(prefix, pk.Address())
+		bz, err := key.ProtoJSONPubKey()
 		if err != nil {
-			return err
-		}
-
-		apk, err := codectypes.NewAnyWithValue(pk)
-		if err != nil {
-			return err
-		}
-		bz, err := codec.ProtoMarshalJSON(apk, nil)
-		if err != nil {
-			return fmt.Errorf("ProtoMarshalJSON: %w", err)
+			return fmt.Errorf("ProtoJSONPubKey: %w", err)
 		}
 		list = append(list, keyOutput{
 			Name:     key.Name(),

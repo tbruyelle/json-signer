@@ -5,8 +5,6 @@ import (
 	"fmt"
 
 	"github.com/tbruyelle/keyring-compat"
-
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 )
 
 const signModeAminoJSON = "SIGN_MODE_LEGACY_AMINO_JSON"
@@ -21,20 +19,19 @@ func signTx(tx Tx, kr keyring.Keyring, signer, chainID, account, sequence string
 	if err != nil {
 		return Tx{}, nil, err
 	}
-
 	// Sign those bytes
-	signature, pubKey, err := key.Sign(bytesToSign)
+	signature, err := key.Sign(bytesToSign)
 	if err != nil {
 		return Tx{}, nil, err
 	}
-
 	// Update tx with signature and signer infos
+	pubkeyBz, err := key.ProtoJSONPubKey()
+	if err != nil {
+		return Tx{}, nil, err
+	}
 	tx.Signatures = [][]byte{signature}
 	tx.AuthInfo.SignerInfos = []SignerInfo{{
-		PublicKey: map[string]any{
-			"@type": codectypes.MsgTypeURL(pubKey),
-			"key":   pubKey.Bytes(),
-		},
+		PublicKey: pubkeyBz,
 		ModeInfo: ModeInfo{
 			Single: Single{
 				Mode: signModeAminoJSON,
@@ -171,9 +168,9 @@ type Coin struct {
 }
 
 type SignerInfo struct {
-	PublicKey any      `json:"public_key"` // TODO improve typing
-	ModeInfo  ModeInfo `json:"mode_info"`
-	Sequence  string   `json:"sequence"`
+	PublicKey json.RawMessage `json:"public_key"`
+	ModeInfo  ModeInfo        `json:"mode_info"`
+	Sequence  string          `json:"sequence"`
 }
 
 type ModeInfo struct {
