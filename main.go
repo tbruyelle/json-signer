@@ -89,7 +89,7 @@ func signTxCmd() *ffcli.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(os.Stderr, "Bytes to sign:\n%s\n", string(bytesToSign))
+			fmt.Fprintf(os.Stderr, "Bytes to sign: %s\n", string(bytesToSign))
 
 			var output any = signedTx
 			if *sigOnly {
