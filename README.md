@@ -21,14 +21,21 @@ DESCRIPTION
   Sign transaction
 
 USAGE
-  json-signer sign-tx -from=<key> -keyring-backend=<keychain|pass|kwallet|file> -chain-id=<chainID> -sequence=<sequence> -account=<account-number> <tx.json>
+  json-signer sign-tx -from=<key> \
+    -keyring-backend=<keychain|pass|kwallet|file> \
+    -chain-id=<chainID> \
+    -sequence=<sequence> \
+    -account=<account-number> \
+    <tx.json>
 
 FLAGS
   -account string          Account number
   -chain-id string         Chain identifier
   -from string             Signer key name
-  -keyring-backend string  Keyring backend, which can be one of 'keychain' (macos), 'pass', 'kwallet' (linux), or 'file'
-  -keyring-dir string      Keyring directory (mandatory with -keyring-backend=file)
+  -keyring-backend string  Keyring backend, which can be one of 'keychain'
+                           (macos), 'pass', 'kwallet' (linux), or 'file'
+  -keyring-dir string      Keyring directory
+                           (mandatory with -keyring-backend=file)
   -sequence string         Sequence number
   -signature-only=false    Outputs only the signature data (useful for multisig)
 ```
