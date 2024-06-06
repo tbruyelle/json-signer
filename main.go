@@ -53,7 +53,7 @@ func listKeysCmd() *ffcli.Command {
 
 func signTxCmd() *ffcli.Command {
 	fs := flag.NewFlagSet("sign-tx", flag.ContinueOnError)
-	keyringDir := fs.String("keyring-dir", "", "Keyring directory")
+	keyringDir := fs.String("keyring-dir", "", "Keyring directory (mandatory with -keyring-backend=file)")
 	keyringBackend := fs.String("keyring-backend", "", "Keyring backend, which can be one of 'keychain' (macos), 'pass', 'kwallet' (linux), or 'file'")
 	signer := fs.String("from", "", "Signer key name")
 	chainID := fs.String("chain-id", "", "Chain identifier")
@@ -69,14 +69,12 @@ func signTxCmd() *ffcli.Command {
 			if err := fs.Parse(args); err != nil {
 				return err
 			}
-			if fs.NArg() != 1 ||
-				fs.Lookup("keyring-backend") == nil ||
-				fs.Lookup("from") == nil || fs.Lookup("sequence") == nil ||
-				fs.Lookup("account") == nil || fs.Lookup("chain-id") == nil {
+			if fs.NArg() != 1 || *keyringBackend == "" || *signer == "" ||
+				*sequence == "" || *account == "" || *chainID == "" {
 				return flag.ErrHelp
 			}
-			if *keyringBackend == "file" && fs.Lookup("keyring-dir") == nil {
-				return fmt.Errorf("--keyring-backend=file requires --keyring-dir flag")
+			if *keyringBackend == "file" && *keyringDir == "" {
+				return fmt.Errorf("-keyring-backend=file requires -keyring-dir flag")
 			}
 			tx, err := readTxFile(fs.Arg(0))
 			if err != nil {
