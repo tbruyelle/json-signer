@@ -7,6 +7,12 @@ the blockchain binary itself, which is often updated and not always audited on
 time. `json-signer` embraces this and aims to deliver an audited tool that is
 able to sign any cosmos-sdk transaction.
 
+`json-signer` supports signing with local private key, ledger and multisig
+accounts.
+
+`json-signer` has E2E tests for the gaia and govgen chains, but it should work
+just well with other cosmos-sdk chains.
+
 ## Usage
 
 ```sh
@@ -31,6 +37,14 @@ Unlike cosmos-sdk apps, there's no automatic selection of keyring backend, you
 have to specify the exact keyring backend where your keys are stored. If you
 don't know, use `json-signer list-keys` with different backends until you find
 out where your keys are stored.
+
+## Caveats
+
+Unlike cosmos-sdk app, `json-signer` is not able to check if the signer is the
+one expected by the message. For example, for a `MsgSend` message, the signer
+must match the `from_address` field, and the cosmos-sdk app CLI will reject the
+attempt to sign such a transaction if it doesn't. The `json-signer` can't do
+this because it doesn't depend on protobuf types like `MsgSend` and others.
 
 ## Example using gaia
 
