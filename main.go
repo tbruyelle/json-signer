@@ -30,12 +30,12 @@ func main() {
 
 func listKeysCmd() *ffcli.Command {
 	fs := flag.NewFlagSet("list-keys", flag.ContinueOnError)
-	keyringDir := fs.String("keyring-dir", "", "Keyring directory")
+	keyringDir := fs.String("keyring-dir", "", "Keyring directory (mandatory with -keyring-backend=file)")
 	keyringBackend := fs.String("keyring-backend", "", "Keyring backend, which can be one of 'keychain' (macos), 'pass', 'kwallet' (linux), or 'file'")
 	prefix := fs.String("prefix", "cosmos", "Bech32 address prefix")
 	return &ffcli.Command{
 		Name:       "list-keys",
-		ShortUsage: "json-signer list-keys --keyring-backend <keychain|pass|kwallet|file> --keyring-dir <dir>",
+		ShortUsage: "json-signer list-keys -keyring-backend=<keychain|pass|kwallet|file> -prefix=<prefix>",
 		ShortHelp:  "List keys from keyring",
 		FlagSet:    fs,
 		Exec: func(ctx context.Context, args []string) error {
@@ -46,7 +46,7 @@ func listKeysCmd() *ffcli.Command {
 			if err != nil {
 				return err
 			}
-			return PrintKeys(os.Stdout, kr, *prefix)
+			return printKeys(os.Stdout, kr, *prefix)
 		},
 	}
 }
@@ -62,7 +62,7 @@ func signTxCmd() *ffcli.Command {
 	sigOnly := fs.Bool("signature-only", false, "Outputs only the signature data")
 	return &ffcli.Command{
 		Name:       "sign-tx",
-		ShortUsage: "json-signer sign-tx --from <key> --keyring-dir <dir> --chain-id <chainID> --sequence <sequence> --account <account> <tx.json>",
+		ShortUsage: "json-signer sign-tx -from=<key> -keyring-backend=<keychain|pass|kwallet|file> -chain-id=<chainID> -sequence=<sequence> -account=<account-number> <tx.json>",
 		ShortHelp:  "Sign transaction",
 		FlagSet:    fs,
 		Exec: func(ctx context.Context, args []string) error {
@@ -124,7 +124,7 @@ func migrateKeysCmd() *ffcli.Command {
 	return &ffcli.Command{
 		Name:       "migrate-keys",
 		ShortUsage: "json-signer migrate-keys <keyring_path>",
-		ShortHelp:  "Migrate keys from proto to amino",
+		ShortHelp:  "Migrate keys from proto to amino (only file backend is supported for now)",
 		FlagSet:    fs,
 		Exec: func(ctx context.Context, args []string) error {
 			fs.Parse(args)

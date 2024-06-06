@@ -16,7 +16,7 @@ type keyOutput struct {
 	PubKey   string `json:"pubkey" yaml:"pubkey"`
 }
 
-func PrintKeys(w io.Writer, kr keyring.Keyring, prefix string) error {
+func printKeys(w io.Writer, kr keyring.Keyring, prefix string) error {
 	keys, err := kr.Keys()
 	if err != nil {
 		return fmt.Errorf("read keyring keys: %w", err)
