@@ -40,10 +40,24 @@ FLAGS
   -signature-only=false    Outputs only the signature data (useful for multisig)
 ```
 
+### Keyring backend selection
+
 Unlike cosmos-sdk apps, there's no automatic selection of keyring backend, you
 have to specify the exact keyring backend where your keys are stored. If you
 don't know, use `json-signer list-keys` with different backends until you find
 out where your keys are stored.
+
+### Target the `test` keyring backend
+
+To use the `test` keyring backend which is targeted with the
+`--keyring-backend=test` flag in cosmos-sdk app CLIs, use the following flags
+in `json-signer` (using `gaia` as an example):
+
+```sh
+-keyring-backend=file -keyring-dir=~/.gaia/keyring-test
+```
+
+Unlike cosmos-sdk app CLIs, a password is required, and the password is `test`.
 
 ## Caveats
 
