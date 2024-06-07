@@ -10,8 +10,8 @@ able to sign any cosmos-sdk transaction.
 `json-signer` supports signing with local private key, ledger and multisig
 accounts.
 
-`json-signer` has E2E tests for the gaia and govgen chains, but it should work
-just well with other cosmos-sdk chains.
+`json-signer` has [E2E tests] for the gaia and govgen chains, but it should
+work just well with other cosmos-sdk chains.
 
 ## Usage
 
@@ -187,3 +187,4 @@ like cosmos-sdk applications >=0.46 does.
 
 [guide]: https://github.com/atomone-hub/govgen-proposals/blob/main/submit-tx-securely.md
 [keyring]: https://github.com/tbruyelle/keyring-compat
+[E2E tests]: https://github.com/tbruyelle/json-signer/tree/master/testdata
