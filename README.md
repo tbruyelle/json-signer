@@ -8,7 +8,7 @@ accounts.
 `json-signer` has [E2E tests] for the gaia and govgen chains, but it should
 work just well with other Cosmos-SDK chains.
 
-## Why
+## Why a separate tool
 
 Your private keys need to be secure, they shouldn't be read by an unaudited
 tool.
@@ -21,6 +21,14 @@ could expose your private keys to malicious people.
 It is therefore preferable to rely on a single tool to sign your transactions.
 `json-signer` embraces this and aims to deliver an audited tool that can sign
 any Cosmos-SDK transaction.
+
+## Why amino-json
+
+Amino-json allows to build the bytes-to-sign without the needs for protobuf
+types registrations. This is important because otherwise this tool would have
+to rely on the latest version of the chain binaries to generate these bytes,
+which would require frequent updates and thus defeat the purpose of the tool,
+which is to be independent of the chain binaries.
 
 ## Usage
 
@@ -180,14 +188,6 @@ $ gaiad tx multi-sign tx.json bob-alice tx-bob-signature.json tx-alice-signature
 The generated file `tx-signed.json` is multi-signed and ready to be
 broadcasted.
  
-## Why amino-json
-
-Amino-json allows to build the bytes-to-sign without the needs for protobuf
-types registrations. This is important because otherwise this tool would have
-to rely on the latest version of the chain binaries to generate these bytes,
-which would require frequent updates and thus defeat the purpose of the tool,
-which is to be independent of the chain binaries.
-
 ## Keyring
 
 `json-signer` also uses a alternate [keyring] package that is able to read
