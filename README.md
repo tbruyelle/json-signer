@@ -1,17 +1,26 @@
 # json-signer
 
-Sign any cosmos transaction using the amino-json sign mode.
-
-It is preferable to rely on a single tool to sign your transaction, instead of
-the blockchain binary itself, which is often updated and not always audited on
-time. `json-signer` embraces this and aims to deliver an audited tool that is
-able to sign any cosmos-sdk transaction.
+Sign any Cosmos-SDK transaction using the amino-json sign mode.
 
 `json-signer` supports signing with local private key, ledger and multisig
 accounts.
 
 `json-signer` has [E2E tests] for the gaia and govgen chains, but it should
-work just well with other cosmos-sdk chains.
+work just well with other Cosmos-SDK chains.
+
+## Why
+
+Your private keys need to be secure, they shouldn't be read by an unaudited
+tool.
+
+Cosmos-sdk applications embed a CLI that can read private keys, but the binary
+is frequently updated and not always audited in time. There's always a risk
+that the lastest version will contain an exploit, a bug or a vulnerability that
+could expose your private keys to malicious people. 
+
+It is therefore preferable to rely on a single tool to sign your transactions.
+`json-signer` embraces this and aims to deliver an audited tool that can sign
+any Cosmos-SDK transaction.
 
 ## Usage
 
@@ -42,7 +51,7 @@ FLAGS
 
 ### Keyring backend selection
 
-Unlike cosmos-sdk apps, there's no automatic selection of keyring backend, you
+Unlike Cosmos-SDK apps, there's no automatic selection of keyring backend, you
 have to specify the exact keyring backend where your keys are stored. If you
 don't know, use `json-signer list-keys` with different backends until you find
 out where your keys are stored.
@@ -50,22 +59,26 @@ out where your keys are stored.
 ### Target the `test` keyring backend
 
 To use the `test` keyring backend which is targeted with the
-`--keyring-backend=test` flag in cosmos-sdk app CLIs, use the following flags
+`--keyring-backend=test` flag in Cosmos-SDK app CLIs, use the following flags
 in `json-signer` (using `gaia` as an example):
 
 ```sh
 -keyring-backend=file -keyring-dir=~/.gaia/keyring-test
 ```
 
-Unlike cosmos-sdk app CLIs, a password is required, and the password is `test`.
+Unlike Cosmos-SDK app CLIs, a password is required, and the password is `test`.
 
 ## Caveats
 
-Unlike cosmos-sdk app, `json-signer` is not able to check if the signer is the
+Unlike Cosmos-SDK app, `json-signer` is not able to check if the signer is the
 one expected by the message. For example, for a `MsgSend` message, the signer
-must match the `from_address` field, and the cosmos-sdk app CLI will reject the
+must match the `from_address` field, and the Cosmos-SDK app CLI will reject the
 attempt to sign such a transaction if it doesn't. The `json-signer` can't do
 this because it doesn't depend on protobuf types like `MsgSend` and others.
+
+But this is not a risk, if the signer is not the expected account, the error
+will occur after the signing, when the signature is verified or when the
+transaction is broadcasted.
 
 ## Example using gaia
 
@@ -112,8 +125,7 @@ The command should not return any error. You can now broadcast the transaction:
 $ gaiad tx broadcast tx-signed.json
 ```
 
-Congratulations, your transaction should be on its way to be executed on the
-chain.
+Congratulations, your transaction is on its way to being executed on the chain.
 
 ## Example with multisig account
 
@@ -179,11 +191,11 @@ which is to be independent of the chain binaries.
 ## Keyring
 
 `json-signer` also uses a alternate [keyring] package that is able to read
-a keyring, whether the keys are amino or proto encoded (before cosmos-sdk 0.46,
+a keyring, whether the keys are amino or proto encoded (before Cosmos-SDK 0.46,
 the keyring was amino encoded, then it has been migrated to protobuf encoding).
 
 And of course it doesn't automatically migrate amino encoded keys to proto keys
-like cosmos-sdk applications >=0.46 does.
+like Cosmos-SDK applications >=0.46 does.
 
 [guide]: https://github.com/atomone-hub/govgen-proposals/blob/main/submit-tx-securely.md
 [keyring]: https://github.com/tbruyelle/keyring-compat
