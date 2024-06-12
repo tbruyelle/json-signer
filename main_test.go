@@ -1,7 +1,6 @@
 package main_test
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -194,12 +193,9 @@ func (n node) homeFlag() string {
 }
 
 func (n node) run(t *testing.T, args ...string) {
-	cmd := exec.Command(n.bin, args...)
-	var b bytes.Buffer
-	cmd.Stderr = &b
-	cmd.Stdout = &b
-	if err := cmd.Run(); err != nil {
-		t.Fatalf("node running '%s %s': %v\n%s", n.bin, strings.Join(args, " "), err, b.String())
+	bz, err := exec.Command(n.bin, args...).CombinedOutput()
+	if err != nil {
+		t.Fatalf("node running '%s %s': %v\n%s", n.bin, strings.Join(args, " "), err, string(bz))
 	}
 }
 
