@@ -15,7 +15,7 @@ func main() {
 	rootCmd := &ffcli.Command{
 		ShortUsage: "json-signer <subcommand>",
 		Subcommands: []*ffcli.Command{
-			listKeysCmd(), migrateKeysCmd(), signTxCmd(),
+			listKeysCmd(), migrateKeysCmd(), signTxCmd(), batchSignTxCmd(),
 		},
 		Exec: func(ctx context.Context, args []string) error {
 			return flag.ErrHelp
@@ -101,6 +101,68 @@ func signTxCmd() *ffcli.Command {
 				return err
 			}
 			fmt.Println(string(bz))
+			return nil
+		},
+	}
+}
+
+func batchSignTxCmd() *ffcli.Command {
+	fs := flag.NewFlagSet("sign-batch", flag.ContinueOnError)
+	keyringDir := fs.String("keyring-dir", "", "Keyring directory (mandatory with -keyring-backend=file)")
+	keyringBackend := fs.String("keyring-backend", "", "Keyring backend, which can be one of 'keychain' (macos), 'pass', 'kwallet' (linux), or 'file'")
+	signer := fs.String("from", "", "Signer key name")
+	chainID := fs.String("chain-id", "", "Chain identifier")
+	account := fs.String("account", "", "Account number")
+	sequence := fs.String("sequence", "", "Sequence number")
+	sigOnly := fs.Bool("signature-only", false, "Outputs only the signature data")
+	return &ffcli.Command{
+		Name:       "sign-batch",
+		ShortUsage: "json-signer sign-batch -from=<key> -keyring-backend=<keychain|pass|kwallet|file> -chain-id=<chainID> -sequence=<sequence> -account=<account-number> <tx.json>",
+		ShortHelp:  "Sign batch transaction",
+		FlagSet:    fs,
+		Exec: func(ctx context.Context, args []string) error {
+			if err := fs.Parse(args); err != nil {
+				return err
+			}
+			if fs.NArg() != 1 || *keyringBackend == "" || *signer == "" ||
+				*sequence == "" || *account == "" || *chainID == "" {
+				return flag.ErrHelp
+			}
+			if *keyringBackend == "file" && *keyringDir == "" {
+				return fmt.Errorf("-keyring-backend=file requires -keyring-dir flag")
+			}
+			kr, err := keyring.New(keyring.BackendType(*keyringBackend), *keyringDir, nil)
+			if err != nil {
+				return err
+			}
+
+			signedTxs, _, err := batchSignTx(kr, fs.Arg(0), *signer, *chainID, *account, *sequence)
+			if err != nil {
+				return err
+			}
+
+			if *sigOnly {
+				// Output signature only
+				for _, signedTx := range signedTxs {
+					tmpOutput, err := json.Marshal(signedTx.GetSignaturesData())
+					if err != nil {
+						return err
+					}
+
+					fmt.Println(string(tmpOutput))
+				}
+				return nil
+			}
+
+			for _, signedTx := range signedTxs {
+				bz, err := json.Marshal(signedTx)
+				if err != nil {
+					return err
+				}
+
+				fmt.Println(string(bz))
+			}
+
 			return nil
 		},
 	}
