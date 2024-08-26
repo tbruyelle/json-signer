@@ -7,13 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	testutilmod "github.com/cosmos/cosmos-sdk/types/module/testutil"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/bank"
-	"github.com/cosmos/cosmos-sdk/x/gov"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/stretchr/testify/assert"
 	keyring "github.com/tbruyelle/keyring-compat"
 	"gopkg.in/yaml.v2"
@@ -40,33 +35,20 @@ func TestListKeys(t *testing.T) {
 		t.Fatalf("failed to create keyring: %v", err)
 	}
 
-	cdc := testutilmod.MakeTestEncodingConfig(auth.AppModuleBasic{}, bank.AppModuleBasic{}, gov.AppModuleBasic{})
-	cosmosKr := cosmoskeyring.NewInMemory(cdc.Codec)
-
-	name := "newAccount"
-	valAcc, _, err := cosmosKr.NewMnemonic(name, cosmoskeyring.English, sdk.FullFundraiserPath, cosmoskeyring.DefaultBIP39Passphrase, hd.Secp256k1)
+	var (
+		privkey = ed25519.GenPrivKeyFromSecret([]byte("secret"))
+		pubkey  = privkey.PubKey()
+	)
+	record, err := cosmoskeyring.NewLocalRecord("local", privkey, pubkey)
 	if err != nil {
-		t.Fatalf("failed to create new account: %v", err)
-	}
-	if valAcc == nil {
-		t.Fatal("failed to create new account: account is nil")
+		t.Fatalf("failed to create new local record: %v", err)
 	}
 
-	addr, err := valAcc.GetAddress()
+	name := "proto.info"
+	err = kr.AddProto(name, record)
 	if err != nil {
-		t.Fatalf("failed to get address: %v", err)
+		t.Fatalf("failed to add proto record: %v", err)
 	}
-	t.Logf("address: %s", addr.String())
-
-	err = kr.AddProto(name, valAcc)
-	if err != nil {
-		t.Fatalf("failed to add key to keyring: %v", err)
-	}
-	keys, err := kr.Keys()
-	if err != nil {
-		t.Fatalf("failed to get keys: %v", err)
-	}
-	t.Logf("keys: %v", keys)
 
 	var buf bytes.Buffer
 	err = printKeys(&buf, kr, "cosmos")
@@ -76,9 +58,9 @@ func TestListKeys(t *testing.T) {
 		{
 			Name:     name,
 			Encoding: "proto",
-			Address:  addr.String(),
+			Address:  "cosmos182t3l5ptfgrlcg926xfk60936f3mjms0djnj6g",
 			Type:     "local",
-			PubKey:   `{"type":"tendermint/PubKeySecp256k1","value":"A+"}`,
+			PubKey:   `{"@type":"/cosmos.crypto.ed25519.PubKey","key":"XQNqhYzon4REkXYuuJ4r+9UKSgoNpljksmKLJbEXrgk="}`,
 		},
 	}
 	var result []keyOutput
