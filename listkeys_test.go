@@ -2,10 +2,7 @@ package main
 
 import (
 	"bytes"
-	"fmt"
-	"os"
 	"testing"
-	"time"
 
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
@@ -15,16 +12,7 @@ import (
 )
 
 func TestListKeys(t *testing.T) {
-	keyringDir, err := os.MkdirTemp("", fmt.Sprintf("tmpKeyringDir-%s", time.Now().Format("20060102-150405")))
-	if err != nil {
-		t.Fatalf("failed to create temp directory: %v", err)
-	}
-
-	defer func() {
-		if err := os.RemoveAll(keyringDir); err != nil {
-			t.Fatalf("failed to remove temp directory (%s): %v", keyringDir, err)
-		}
-	}()
+	keyringDir := t.TempDir()
 
 	kr, err := keyring.New(
 		keyring.BackendType("file"),
