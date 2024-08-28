@@ -69,11 +69,31 @@ func TestSignBatchTx(t *testing.T) {
 					},
 					Sequence: "3",
 				},
+				{
+					PublicKey: pubKeyBz,
+					ModeInfo: ModeInfo{
+						Single: Single{
+							Mode: signModeAminoJSON,
+						},
+					},
+					Sequence: "4",
+				},
+				{
+					PublicKey: pubKeyBz,
+					ModeInfo: ModeInfo{
+						Single: Single{
+							Mode: signModeAminoJSON,
+						},
+					},
+					Sequence: "5",
+				},
 			},
 			expectedSignatures: []string{
 				"d1/D9FzsdsIE5TIqhG687MHEALakPIJOfT01ZSx2moSqNYsTetGpQjJ4f58W58AchO3mSz7x/yPBZpeFUPiFDA==",
 				"UX9NiZlUYUAO+O/cogZBWJSdK7MQVtkGwz6PBilFkiG4qH9BMAKLiWCuaE5sK1mFsjl15qJj6jMk7xzoDm1/AQ==",
 				"UqX2htnKSp4+lqmdr1LICRcs9t2ft2rqGAqfatHaHDni22ZWpUuZycCGQwLTYTy+N32b/DFo28Vx10QS99AzCQ==",
+				"psqSiKaoTtDF2ANGjzdJ1Yq7WrTCj8kkiR8Id6UuTKlSpLg0t9fzdvU1aOlgNILFMMqlsiVcFT5zvSMevvz1Bg==",
+				"ETzhWMnpsCj+F3FVNDDO34cZwwFmOhvwBns+peMBA0GIOlEy7y5PBFDfFzI7Ti2NcFLEiuaKLmAu78flcX7QBQ==",
 			},
 		},
 	}
@@ -82,8 +102,7 @@ func TestSignBatchTx(t *testing.T) {
 			require := require.New(t)
 			assert := assert.New(t)
 
-			signedTxs, _, err := batchSignTx(kr, "./testdata/batch_tx.json", tt.keyname, "chain-id", "42", "1")
-
+			signedTxs, err := batchSignTxs([]string{"./testdata/batch_tx_1.txt", "./testdata/batch_tx_2.txt"}, kr, tt.keyname, "chain-id", "42", "1")
 			require.NoError(err)
 			assert.Equal(len(signedTxs), len(tt.expectedSignatures))
 
