@@ -93,17 +93,17 @@ func signTxCmd() *ffcli.Command {
 			}
 			fmt.Fprintf(os.Stderr, "Bytes to sign: %s\n", string(bytesToSign))
 
-			var output any = signedTx
-			if *sigOnly {
-				// Output signature only
-				output = signedTx.GetSignaturesData()
+			switch {
+			case *sigOnly:
+				{
+					// Output signature only
+					return print(signedTx.GetSignaturesData())
+				}
+			default:
+				{
+					return print(signedTx)
+				}
 			}
-			bz, err := json.Marshal(output)
-			if err != nil {
-				return err
-			}
-			fmt.Println(string(bz))
-			return nil
 		},
 	}
 }
@@ -137,12 +137,9 @@ func batchSignTxCmd() *ffcli.Command {
 				{
 					// Output signature only
 					for _, signedTx := range signedTxs {
-						tmpOutput, err := json.Marshal(signedTx.GetSignaturesData())
-						if err != nil {
+						if err = print(signedTx.GetSignaturesData()); err != nil {
 							return err
 						}
-
-						fmt.Println(string(tmpOutput))
 					}
 
 					return nil
@@ -150,12 +147,9 @@ func batchSignTxCmd() *ffcli.Command {
 			default:
 				{
 					for _, signedTx := range signedTxs {
-						bz, err := json.Marshal(signedTx)
-						if err != nil {
+						if err = print(signedTx); err != nil {
 							return err
 						}
-
-						fmt.Println(string(bz))
 					}
 
 					return nil
@@ -163,6 +157,17 @@ func batchSignTxCmd() *ffcli.Command {
 			}
 		},
 	}
+}
+
+func print(i interface{}) error {
+	bz, err := json.Marshal(i)
+	if err != nil {
+		return err
+	}
+
+	_, err = fmt.Println(string(bz))
+
+	return err
 }
 
 func batchSignTxs(files []string, kr keyring.Keyring, signer, chainID, account, sequence string) ([]Tx, error) {
@@ -280,7 +285,6 @@ func setCommonFlags(f *flag.FlagSet) {
 func parseAndCheckCommonFlags(f *flag.FlagSet, args []string) error {
 	if f == nil {
 		return fmt.Errorf("flag.FlagSet is nil")
-
 	}
 
 	if err := f.Parse(args); err != nil {

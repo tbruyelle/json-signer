@@ -8,12 +8,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tbruyelle/keyring-compat"
 
-	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
-
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 )
 
-func TestSignBatchTx(t *testing.T) {
+func TestSignTxBatch(t *testing.T) {
 	kr, err := keyring.New(keyring.BackendType("file"), t.TempDir(),
 		func(_ string) (string, error) { return "test", nil })
 	require.NoError(t, err)
