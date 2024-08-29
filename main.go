@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
 	"github.com/tbruyelle/keyring-compat"
@@ -15,7 +17,7 @@ func main() {
 	rootCmd := &ffcli.Command{
 		ShortUsage: "json-signer <subcommand>",
 		Subcommands: []*ffcli.Command{
-			listKeysCmd(), migrateKeysCmd(), signTxCmd(),
+			listKeysCmd(), migrateKeysCmd(), signTxCmd(), batchSignTxCmd(),
 		},
 		Exec: func(ctx context.Context, args []string) error {
 			return flag.ErrHelp
@@ -53,29 +55,18 @@ func listKeysCmd() *ffcli.Command {
 
 func signTxCmd() *ffcli.Command {
 	fs := flag.NewFlagSet("sign-tx", flag.ContinueOnError)
-	keyringDir := fs.String("keyring-dir", "", "Keyring directory (mandatory with -keyring-backend=file)")
-	keyringBackend := fs.String("keyring-backend", "", "Keyring backend, which can be one of 'keychain' (macos), 'pass', 'kwallet' (linux), or 'file'")
-	signer := fs.String("from", "", "Signer key name")
-	chainID := fs.String("chain-id", "", "Chain identifier")
-	account := fs.String("account", "", "Account number")
-	sequence := fs.String("sequence", "", "Sequence number")
-	sigOnly := fs.Bool("signature-only", false, "Outputs only the signature data")
+	keyringBackend, keyringDir, signer, chainID, account, sequence, sigOnly := setCommonFlags(fs)
+
 	return &ffcli.Command{
 		Name:       "sign-tx",
 		ShortUsage: "json-signer sign-tx -from=<key> -keyring-backend=<keychain|pass|kwallet|file> -chain-id=<chainID> -sequence=<sequence> -account=<account-number> <tx.json>",
 		ShortHelp:  "Sign transaction",
 		FlagSet:    fs,
 		Exec: func(ctx context.Context, args []string) error {
-			if err := fs.Parse(args); err != nil {
+			if err := parseAndCheckCommonFlags(fs, args, keyringDir, keyringBackend, signer, sequence, account, chainID, true); err != nil {
 				return err
 			}
-			if fs.NArg() != 1 || *keyringBackend == "" || *signer == "" ||
-				*sequence == "" || *account == "" || *chainID == "" {
-				return flag.ErrHelp
-			}
-			if *keyringBackend == "file" && *keyringDir == "" {
-				return fmt.Errorf("-keyring-backend=file requires -keyring-dir flag")
-			}
+
 			tx, err := readTxFile(fs.Arg(0))
 			if err != nil {
 				return err
@@ -91,19 +82,116 @@ func signTxCmd() *ffcli.Command {
 			}
 			fmt.Fprintf(os.Stderr, "Bytes to sign: %s\n", string(bytesToSign))
 
-			var output any = signedTx
-			if *sigOnly {
-				// Output signature only
-				output = signedTx.GetSignaturesData()
+			switch {
+			case *sigOnly:
+				{
+					// Output signature only
+					return print(signedTx.GetSignaturesData())
+				}
+			default:
+				{
+					return print(signedTx)
+				}
 			}
-			bz, err := json.Marshal(output)
+		},
+	}
+}
+
+func batchSignTxCmd() *ffcli.Command {
+	fs := flag.NewFlagSet("sign-tx-batch", flag.ContinueOnError)
+	keyringBackend, keyringDir, signer, chainID, account, sequence, sigOnly := setCommonFlags(fs)
+
+	return &ffcli.Command{
+		Name:       "sign-tx-batch",
+		ShortUsage: "json-signer sign-tx-batch -from=<key> -keyring-backend=<keychain|pass|kwallet|file> -chain-id=<chainID> -sequence=<sequence> -account=<account-number> [file] ([file2]...)",
+		ShortHelp:  "Sign batch transaction(s)",
+		FlagSet:    fs,
+		Exec: func(ctx context.Context, args []string) error {
+			if err := parseAndCheckCommonFlags(fs, args, keyringDir, keyringBackend, signer, sequence, account, chainID, false); err != nil {
+				return err
+			}
+
+			kr, err := keyring.New(keyring.BackendType(*keyringBackend), *keyringDir, nil)
 			if err != nil {
 				return err
 			}
-			fmt.Println(string(bz))
-			return nil
+
+			signedTxs, err := batchSignTxs(fs.Args(), kr, *signer, *chainID, *account, *sequence)
+			if err != nil {
+				return err
+			}
+
+			switch {
+			case *sigOnly:
+				{
+					// Output signature only
+					for _, signedTx := range signedTxs {
+						if err = print(signedTx.GetSignaturesData()); err != nil {
+							return err
+						}
+					}
+
+					return nil
+				}
+			default:
+				{
+					for _, signedTx := range signedTxs {
+						if err = print(signedTx); err != nil {
+							return err
+						}
+					}
+
+					return nil
+				}
+			}
 		},
 	}
+}
+
+func print(i interface{}) error {
+	bz, err := json.Marshal(i)
+	if err != nil {
+		return err
+	}
+
+	_, err = fmt.Println(string(bz))
+
+	return err
+}
+
+func batchSignTxs(files []string, kr keyring.Keyring, signer, chainID, account, sequence string) ([]Tx, error) {
+	var (
+		signedTxs, unsignedTxs []Tx
+		unsignedTx, signedTx   Tx
+		i                      int
+	)
+
+	seq, err := strconv.ParseInt(sequence, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, file := range files {
+		unsignedTxs, err = readTxs(file)
+		if err != nil {
+			return nil, err
+		}
+
+		// Sign each tx
+		for _, unsignedTx = range unsignedTxs {
+			sequence = strconv.FormatInt(seq+int64(i), 10)
+			i++
+
+			signedTx, _, err = signTx(unsignedTx, kr, signer, chainID, account, sequence)
+			if err != nil {
+				return nil, err
+			}
+
+			signedTxs = append(signedTxs, signedTx)
+		}
+	}
+
+	return signedTxs, nil
 }
 
 func readTxFile(txFile string) (Tx, error) {
@@ -117,6 +205,35 @@ func readTxFile(txFile string) (Tx, error) {
 		return Tx{}, fmt.Errorf("JSON decode %s: %v", txFile, err)
 	}
 	return tx, nil
+}
+
+func readTxs(fileLoc string) ([]Tx, error) {
+	f, err := os.Open(fileLoc)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	// Create a new scanner for the file
+	scanner := bufio.NewScanner(f)
+
+	// Read and append each line of the file
+	var txs []Tx
+	for scanner.Scan() {
+		line := scanner.Text()
+		var tx Tx
+		if err := json.Unmarshal([]byte(line), &tx); err != nil {
+			return nil, err
+		}
+		txs = append(txs, tx)
+	}
+
+	// Check for errors during the scan
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return txs, nil
 }
 
 func migrateKeysCmd() *ffcli.Command {
@@ -138,4 +255,44 @@ func migrateKeysCmd() *ffcli.Command {
 			return kr.MigrateProtoKeysToAmino()
 		},
 	}
+}
+
+func setCommonFlags(f *flag.FlagSet) (*string, *string, *string, *string, *string, *string, *bool) {
+	if f == nil {
+		panic("flag.FlagSet is nil")
+	}
+
+	keyringDir := f.String("keyring-dir", "", "Keyring directory (mandatory with -keyring-backend=file)")
+	keyringBackend := f.String("keyring-backend", "", "Keyring backend, which can be one of 'keychain' (macos), 'pass', 'kwallet' (linux), or 'file'")
+	signer := f.String("from", "", "Signer key name")
+	chainID := f.String("chain-id", "", "Chain identifier")
+	account := f.String("account", "", "Account number")
+	sequence := f.String("sequence", "", "Sequence number")
+	sigOnly := f.Bool("signature-only", false, "Outputs only the signature data")
+
+	return keyringBackend, keyringDir, signer, chainID, account, sequence, sigOnly
+}
+
+func parseAndCheckCommonFlags(f *flag.FlagSet, args []string, keyringDir, keyringBackend, signer, sequence, account, chainID *string, checkNArg bool) error {
+	if f == nil {
+		return fmt.Errorf("flag.FlagSet is nil")
+	}
+
+	if err := f.Parse(args); err != nil {
+		return err
+	}
+	if checkNArg {
+		if f.NArg() != 1 {
+			return flag.ErrHelp
+		}
+	}
+	if *keyringBackend == "" || *signer == "" ||
+		*sequence == "" || *account == "" || *chainID == "" {
+		return flag.ErrHelp
+	}
+	if *keyringBackend == "file" && *keyringDir == "" {
+		return fmt.Errorf("-keyring-backend=file requires -keyring-dir flag")
+	}
+
+	return nil
 }
