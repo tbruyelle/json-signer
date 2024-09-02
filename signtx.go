@@ -10,7 +10,7 @@ import (
 const signModeAminoJSON = "SIGN_MODE_LEGACY_AMINO_JSON"
 
 func signTx(tx Tx, kr keyring.Keyring, signer, chainID, account, sequence string) (Tx, []byte, error) {
-	key, err := kr.Get(signer + ".info")
+	key, err := kr.Get(signer)
 	if err != nil {
 		return Tx{}, nil, err
 	}

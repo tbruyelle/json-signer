@@ -467,7 +467,7 @@ func TestProtoToAminoJSON(t *testing.T) {
 			},
 			expectedAmino: map[string]any{
 				"msg1": map[string]any{
-					"type": "cosmos-sdk/MsgSubmitProposal",
+					"type": "govgen/MsgSubmitProposal",
 					"value": map[string]any{
 						"initial_deposit": []any{},
 					},

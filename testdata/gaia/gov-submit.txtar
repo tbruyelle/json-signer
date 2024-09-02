@@ -172,26 +172,21 @@ test
 }
 -- param-change-proposal.json --
 {
-  "messages": [
-		{
-      "@type": "/cosmos.gov.v1.MsgExecLegacyContent",
-      "content": {
-				"@type": "/cosmos.params.v1beta1.ParameterChangeProposal",
-    		"title": "Decrease InflationMin parameter to 0%",
-    		"description": "my-desc",
-    		"changes": [
-    		  {
-    		    "subspace": "mint",
-    		    "key": "InflationMin",
-    		    "value": "\"0.000000000000000000\""
-    		  }
-				]
-			},
-      "authority": "cosmos10d07y265gmmuvt4z0w9aw880jnsr700j6zn9kn"
-		}
-	],
-  "metadata": "4pIMOgIGx1vZGU=",
-  "deposit": "10uatom",
-  "title": "My proposal",
-  "summary": "A short summary of my proposal"
+ "messages": [
+  {
+   "@type": "/cosmos.auth.v1beta1.MsgUpdateParams",
+   "authority": "cosmos10d07y265gmmuvt4z0w9aw880jnsr700j6zn9kn",
+   "params": {
+	  "max_memo_characters": "1",
+    "tx_sig_limit": "1",
+    "tx_size_cost_per_byte": "1",
+    "sig_verify_cost_ed25519": "1",
+    "sig_verify_cost_secp256k1": "1"
+	 }
+  }
+ ],
+ "metadata": "ipfs://CID",
+ "deposit": "1000000uatom",
+ "title": "ParamC",
+ "summary": "dd"
 }

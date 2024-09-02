@@ -2,7 +2,7 @@ module github.com/tbruyelle/json-signer/testdeps/govgen
 
 go 1.22.2
 
-require github.com/atomone-hub/govgen v1.0.2
+require github.com/atomone-hub/govgen v1.0.3
 
 require (
 	cosmossdk.io/api v0.2.6 // indirect

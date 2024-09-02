@@ -16,12 +16,12 @@ import (
 	"github.com/tbruyelle/keyring-compat"
 )
 
-func TestE2EGaiaV15(t *testing.T) {
-	runE2ETest(t, "testdata/gaiaV15", setupGaiaNode(t))
+func TestE2EGaia(t *testing.T) {
+	runE2ETest(t, "testdata/gaia", setupGaiaNode(t))
 }
 
-func TestE2EGovgenV1(t *testing.T) {
-	runE2ETest(t, "testdata/govgenV1", setupGovgenNode(t))
+func TestE2EGovgen(t *testing.T) {
+	runE2ETest(t, "testdata/govgen", setupGovgenNode(t))
 }
 
 func runE2ETest(t *testing.T, dir string, node node) {
@@ -78,7 +78,7 @@ func setupGovgenNode(t *testing.T) node {
 	govgendBin := filepath.Join(dir, "govgend")
 	// Build gaiad bin
 	err := exec.Command("go", "build", "-o", govgendBin,
-		"-modfile=testdeps/govgenV1/go.mod",
+		"-modfile=testdeps/govgen/go.mod",
 		"github.com/atomone-hub/govgen/cmd/govgend",
 	).Run()
 	if err != nil {
@@ -116,12 +116,12 @@ func setupGovgenNode(t *testing.T) node {
 	if err != nil {
 		t.Fatalf("cannot access gaia keyring: %v", err)
 	}
-	n.addrs.val1 = getBech32Addr(t, kr, "val1.info", "govgenvaloper")
-	n.addrs.val2 = getBech32Addr(t, kr, "val2.info", "govgenvaloper")
-	n.addrs.test1 = getBech32Addr(t, kr, "test1.info", "govgen")
-	n.addrs.test2 = getBech32Addr(t, kr, "test2.info", "govgen")
-	n.addrs.test3 = getBech32Addr(t, kr, "test3.info", "govgen")
-	n.addrs.multisig = getBech32Addr(t, kr, "test1-test2-multisig.info", "govgen")
+	n.addrs.val1 = getBech32Addr(t, kr, "val1", "govgenvaloper")
+	n.addrs.val2 = getBech32Addr(t, kr, "val2", "govgenvaloper")
+	n.addrs.test1 = getBech32Addr(t, kr, "test1", "govgen")
+	n.addrs.test2 = getBech32Addr(t, kr, "test2", "govgen")
+	n.addrs.test3 = getBech32Addr(t, kr, "test3", "govgen")
+	n.addrs.multisig = getBech32Addr(t, kr, "test1-test2-multisig", "govgen")
 	return n
 }
 
@@ -130,8 +130,8 @@ func setupGaiaNode(t *testing.T) node {
 	gaiadBin := filepath.Join(dir, "gaiad")
 	// Build gaiad bin
 	err := exec.Command("go", "build", "-o", gaiadBin,
-		"-modfile=testdeps/gaiaV15/go.mod",
-		"github.com/cosmos/gaia/v15/cmd/gaiad",
+		"-modfile=testdeps/gaia/go.mod",
+		"github.com/cosmos/gaia/v18/cmd/gaiad",
 	).Run()
 	if err != nil {
 		t.Fatalf("can't build gaiad: %v", err)
@@ -167,12 +167,12 @@ func setupGaiaNode(t *testing.T) node {
 	if err != nil {
 		t.Fatalf("cannot access gaia keyring: %v", err)
 	}
-	n.addrs.val1 = getBech32Addr(t, kr, "val1.info", "cosmosvaloper")
-	n.addrs.val2 = getBech32Addr(t, kr, "val2.info", "cosmosvaloper")
-	n.addrs.test1 = getBech32Addr(t, kr, "test1.info", "cosmos")
-	n.addrs.test2 = getBech32Addr(t, kr, "test2.info", "cosmos")
-	n.addrs.test3 = getBech32Addr(t, kr, "test3.info", "cosmos")
-	n.addrs.multisig = getBech32Addr(t, kr, "test1-test2-multisig.info", "cosmos")
+	n.addrs.val1 = getBech32Addr(t, kr, "val1", "cosmosvaloper")
+	n.addrs.val2 = getBech32Addr(t, kr, "val2", "cosmosvaloper")
+	n.addrs.test1 = getBech32Addr(t, kr, "test1", "cosmos")
+	n.addrs.test2 = getBech32Addr(t, kr, "test2", "cosmos")
+	n.addrs.test3 = getBech32Addr(t, kr, "test3", "cosmos")
+	n.addrs.multisig = getBech32Addr(t, kr, "test1-test2-multisig", "cosmos")
 	return n
 }
 

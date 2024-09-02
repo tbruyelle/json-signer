@@ -3,5 +3,5 @@
 package testdeps
 
 import (
-	_ "github.com/cosmos/gaia/v15/cmd/gaiad"
+	_ "github.com/cosmos/gaia/v18/cmd/gaiad"
 )

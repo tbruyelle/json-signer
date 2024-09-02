@@ -21,9 +21,10 @@ type aminoType struct {
 	// unregistered indicates the type is not registered in amino, therefore it
 	// should be marshalled as pure JSON.
 	// Useful for some proposals embeded in MsgExecLegacyContent.Content, like
-	// ClientUpdate and ParameterChangeProposal. For some reasons those kinds of
-	// proposals are marshalled in pure JSON in MsgExecLegacyContent.Content,
-	// while it's not the case for other like SoftwareUpgradeProposal.
+	// ClientUpdate.
+	// For some reasons those kinds of proposals are marshalled in pure JSON in
+	// MsgExecLegacyContent.Content, while it's not the case for other like
+	// SoftwareUpgradeProposal.
 	unregistered bool
 }
 
@@ -49,6 +50,9 @@ var protoToAminoTypeMap = map[string]aminoType{
 	"/cosmos.distribution.v1beta1.MsgWithdrawTokenizeShareRecordReward":    {name: "cosmos-sdk/MsgWithdrawTokenizeReward"},
 	"/cosmos.distribution.v1beta1.MsgWithdrawAllTokenizeShareRecordReward": {name: "cosmos-sdk/MsgWithdrawAllTokenizeReward"},
 
+	// cosmos-sdk auth module
+	"/cosmos.auth.v1beta1.MsgUpdateParams": {name: "cosmos-sdk/x/auth/MsgUpdateParams"},
+
 	// cosmos-sdk slashing module
 	"/cosmos.slashing.v1beta1.MsgUnjail": {
 		name: "cosmos-sdk/MsgUnjail",
@@ -61,7 +65,7 @@ var protoToAminoTypeMap = map[string]aminoType{
 	"/ibc.core.client.v1.ClientUpdateProposal": {unregistered: true},
 
 	// cosmos-sdk params module
-	"/cosmos.params.v1beta1.ParameterChangeProposal": {unregistered: true},
+	"/cosmos.params.v1beta1.ParameterChangeProposal": {name: "cosmos-sdk/ParameterChangeProposal"},
 
 	// cosmos-sdk upgrade module
 	"/cosmos.upgrade.v1beta1.SoftwareUpgradeProposal":       {name: "cosmos-sdk/SoftwareUpgradeProposal"},
@@ -119,23 +123,23 @@ var protoToAminoTypeMap = map[string]aminoType{
 
 	// Govgen gov module
 	"/govgen.gov.v1beta1.MsgSubmitProposal": {
-		name:       "cosmos-sdk/MsgSubmitProposal",
+		name:       "govgen/MsgSubmitProposal",
 		allowEmpty: "/initial_deposit",
 	},
-	"/govgen.gov.v1beta1.MsgDeposit": {name: "cosmos-sdk/MsgDeposit"},
+	"/govgen.gov.v1beta1.MsgDeposit": {name: "govgen/MsgDeposit"},
 	"/govgen.gov.v1beta1.MsgVote": {
-		name: "cosmos-sdk/MsgVote",
+		name: "govgen/MsgVote",
 		enums: map[string]map[string]int{
 			"/option": voteOptionsEnum,
 		},
 	},
 	"/govgen.gov.v1beta1.MsgVoteWeighted": {
-		name: "cosmos-sdk/MsgVoteWeighted",
+		name: "govgen/MsgVoteWeighted",
 		enums: map[string]map[string]int{
 			"/options/option": voteOptionsEnum,
 		},
 	},
-	"/govgen.gov.v1beta1.TextProposal": {name: "cosmos-sdk/TextProposal"},
+	"/govgen.gov.v1beta1.TextProposal": {name: "govgen/TextProposal"},
 
 	// misc mapping
 	"/cosmos.crypto.secp256k1.PubKey": {
