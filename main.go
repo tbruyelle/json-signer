@@ -216,15 +216,13 @@ func batchSignTxCmd() *ffcli.Command {
 	}
 }
 
-func print(i interface{}) error {
-	bz, err := json.Marshal(i)
+func print(x any) error {
+	bz, err := json.Marshal(x)
 	if err != nil {
 		return err
 	}
-
-	_, err = fmt.Println(string(bz))
-
-	return err
+	fmt.Println(string(bz))
+	return nil
 }
 
 func batchSignTxs(files []string, kr keyring.Keyring, signer, chainID, account, sequence string) ([]Tx, error) {
