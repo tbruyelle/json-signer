@@ -443,6 +443,10 @@ github.com/tbruyelle/keyring-compat v0.0.0-20240902123306-d30498d73f35 h1:UhB44o
 github.com/tbruyelle/keyring-compat v0.0.0-20240902123306-d30498d73f35/go.mod h1:O2KOjxEOT+gVCtpwL0NAqerKDRLRT/KG4l499Xmaoy0=
 github.com/tbruyelle/keyring-compat v0.0.0-20240902130826-51bb01fafa45 h1:UbxlGqGIluYgWJsN25vXC3GDRg5WKhTZmDAidU17NA0=
 github.com/tbruyelle/keyring-compat v0.0.0-20240902130826-51bb01fafa45/go.mod h1:O2KOjxEOT+gVCtpwL0NAqerKDRLRT/KG4l499Xmaoy0=
+github.com/tbruyelle/keyring-compat v0.0.0-20240902135143-c51befa2c228 h1:rHQrgFr+Ra4aOAFFnSNONWVKNNGAvvp8aWO8Yycvm8s=
+github.com/tbruyelle/keyring-compat v0.0.0-20240902135143-c51befa2c228/go.mod h1:O2KOjxEOT+gVCtpwL0NAqerKDRLRT/KG4l499Xmaoy0=
+github.com/tbruyelle/keyring-compat v0.0.0-20240917092433-1da320e2a5c1 h1:KK2HF26GJoiFn2gkTbnTluDzXw8k9HcB4XnJlqv/+2Q=
+github.com/tbruyelle/keyring-compat v0.0.0-20240917092433-1da320e2a5c1/go.mod h1:O2KOjxEOT+gVCtpwL0NAqerKDRLRT/KG4l499Xmaoy0=
 github.com/tendermint/go-amino v0.16.0 h1:GyhmgQKvqF82e2oZeuMSp9JTN0N09emoSZlb2lyGa2E=
 github.com/tendermint/go-amino v0.16.0/go.mod h1:TQU0M1i/ImAo+tYpZi73AU3V/dKeCoMC9Sphe2ZwGME=
 github.com/tidwall/btree v1.7.0 h1:L1fkJH/AuEh5zBnnBbmTwQ5Lt+bRJ5A8EWecslvo9iI=

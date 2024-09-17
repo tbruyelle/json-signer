@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -11,13 +12,16 @@ import (
 
 	"github.com/peterbourgon/ff/v3/ffcli"
 	"github.com/tbruyelle/keyring-compat"
+
+	"github.com/cosmos/cosmos-sdk/crypto/hd"
+	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 )
 
 func main() {
 	rootCmd := &ffcli.Command{
 		ShortUsage: "json-signer <subcommand>",
 		Subcommands: []*ffcli.Command{
-			listKeysCmd(), migrateKeysCmd(), signTxCmd(), batchSignTxCmd(),
+			listKeysCmd(), importKeyHexCmd(), migrateKeysCmd(), signTxCmd(), batchSignTxCmd(),
 		},
 		Exec: func(ctx context.Context, args []string) error {
 			return flag.ErrHelp
@@ -49,6 +53,70 @@ func listKeysCmd() *ffcli.Command {
 				return err
 			}
 			return printKeys(os.Stdout, kr, *prefix)
+		},
+	}
+}
+
+func importKeyHexCmd() *ffcli.Command {
+	fs := flag.NewFlagSet("import-key-hex", flag.ContinueOnError)
+	keyringDir := fs.String("keyring-dir", "", "Keyring directory (mandatory with -keyring-backend=file)")
+	keyringBackend := fs.String("keyring-backend", "", "Keyring backend, which can be one of 'keychain' (macos), 'pass', 'kwallet' (linux), or 'file'")
+	keyringEncoding := fs.String("keyring-encoding", "proto", "Keyring encoding, must be one of 'amino' or 'proto'")
+	return &ffcli.Command{
+		Name:       "import-key-hex",
+		ShortUsage: "json-signer import-key-hex -keyring-backend=<keychain|pass|kwallet|file> -keyring-dir=<path> -keyring-encoding=<amino|proto> <key-name> <key-hex>",
+		ShortHelp:  "Import private key in hex format",
+		FlagSet:    fs,
+		Exec: func(ctx context.Context, args []string) error {
+			if err := fs.Parse(args); err != nil {
+				return err
+			}
+			if fs.NArg() != 2 {
+				return flag.ErrHelp
+			}
+			kr, err := keyring.New(keyring.BackendType(*keyringBackend), *keyringDir, nil)
+			if err != nil {
+				return err
+			}
+			var (
+				name   = fs.Arg(0)
+				keyHex = fs.Arg(1)
+			)
+			// Decode the private key hex string
+			privateKeyBz, err := hex.DecodeString(keyHex)
+			if err != nil {
+				return fmt.Errorf("failed to decode private key: %v", err)
+			}
+			// Generate types.PrivKey from bytes
+			privKey := hd.Secp256k1.Generate()(privateKeyBz)
+			// Create proto record from privKey
+			record, err := cosmoskeyring.NewLocalRecord(name, privKey, privKey.PubKey())
+			if err != nil {
+				return fmt.Errorf("error NewLocalRecord: %v", err)
+			}
+
+			switch *keyringEncoding {
+			case "amino":
+				// Derive amino info from proto record
+				info, err := keyring.LegacyInfoFromRecord(record)
+				if err != nil {
+					return fmt.Errorf("error LegacyInfoFromRecord: %v", err)
+				}
+				// record key with amino encoding
+				err = kr.AddAmino(name, info)
+				if err != nil {
+					return fmt.Errorf("error AddAmino: %v", err)
+				}
+			case "proto":
+				// record key with proto encoding
+				err = kr.AddProto(name, record)
+				if err != nil {
+					return fmt.Errorf("error AddProto: %v", err)
+				}
+			default:
+				return fmt.Errorf("unsuported encoding %s: must be one of amino or proto", *keyringEncoding)
+			}
+			return nil
 		},
 	}
 }
